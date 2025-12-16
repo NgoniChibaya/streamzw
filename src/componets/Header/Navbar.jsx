@@ -5,6 +5,7 @@ import { Fade } from "react-reveal";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 import { AuthContext } from "../../Context/UserContext";
+import Logo from "../../images/Logo.png";
 
 function Navbar(props) {
   const { User } = useContext(AuthContext);
@@ -71,7 +72,7 @@ function Navbar(props) {
                 <div className="flex-shrink-0">
                   <img
                     className="h-6 cursor-pointer w-18"
-                    src="https://fontmeme.com/permalink/250902/1c1670dd6284f8d01001e1c74b52aae3.png"
+                    src={Logo}
                     alt="NETFLIX"
                   />
                 </div>
@@ -166,7 +167,7 @@ function Navbar(props) {
                             ? `${User.photoURL}`
                             : `https://www.citypng.com/public/uploads/preview/profile-user-round-red-icon-symbol-download-png-11639594337tco5j3n0ix.png`
                         }
-                        alt="NETFLIX"
+                        alt="PROFILE"
                       />
                     </Link>
                     <ul class="absolute hidden text-white pt-1 -ml-32 group-hover:block transition ease-in-out delay-150">

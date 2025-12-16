@@ -14,7 +14,7 @@ import { db } from "../Firebase/FirebaseConfig";
 import { AuthContext } from "../Context/UserContext";
 
 import GoogleLogo from "../images/GoogleLogo.png";
-import WelcomePageBanner from "../images/WelcomePageBanner.jpg";
+import WelcomePageBanner from "../images/WelcomBannerNew.png";
 
 function SignIn() {
   const { User, setUser } = useContext(AuthContext);
@@ -123,15 +123,12 @@ function SignIn() {
       }}
     >
       <div className="h-[100vh] flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <div className="w-full bg-[#000000a2] rounded-lg shadow sm:my-0 md:mt-0 sm:max-w-lg xl:p-0 border-2 border-stone-800 lg:border-0">
+        <div className="w-full bg-[#000000a2] rounded-lg shadow sm:my-0 md:mt-0 sm:max-w-md xl:p-0 sm:p-8 border-2 border-stone-800 lg:border-0">
           <Fade>
             <div>
-              <div className="p-6 space-y-4 md:space-y-6 sm:p-12">
-                <h1 className="text-xl font-bold leading-tight tracking-tight text-white md:text-2xl dark:text-white">
+              <div className="p-4 space-y-4 md:space-y-6 sm:p-8">
+                <h1 className="text-lg font-bold leading-tight tracking-tight text-white md:text-xl dark:text-white">
                   Sign in to your account
-                </h1>
-                <h1 className="text-white text-2xl p-3 text-center border-2 border-red-700 rounded-sm">
-                  Not Real Netflix
                 </h1>
                 <form
                   onSubmit={handleSubmit}
@@ -151,8 +148,8 @@ function SignIn() {
                       id="email"
                       className={
                         ErrorMessage
-                          ? "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 border-2 border-red-700  dark:placeholder-white dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 placeholder:text-white"
-                          : "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:placeholder-white dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 placeholder:text-white"
+                          ? "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-transparent focus:border-transparent block w-full p-2.5 border-2 border-transparent dark:placeholder-white dark:text-white dark:focus:ring-transparent dark:focus:border-transparent placeholder:text-white"
+                          : "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-transparent focus:border-transparent block w-full p-2.5 dark:placeholder-white dark:text-white dark:focus:ring-transparent dark:focus:border-transparent placeholder:text-white"
                       }
                       placeholder="name@email.com"
                       required=""
@@ -173,8 +170,8 @@ function SignIn() {
                       placeholder="••••••••"
                       className={
                         ErrorMessage
-                          ? "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5  border-2 border-red-700 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 placeholder:text-white"
-                          : "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 placeholder:text-white"
+                          ? "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-transparent focus:border-transparent block w-full p-2.5  border-2 border-transparent dark:bg-gray-700 dark:text-white dark:focus:ring-transparent dark:focus:border-transparent placeholder:text-white"
+                          : "bg-stone-700 text-white sm:text-sm rounded-sm focus:ring-transparent focus:border-transparent block w-full p-2.5 dark:text-white dark:focus:ring-transparent dark:focus:border-transparent placeholder:text-white"
                       }
                       required=""
                       onChange={(e) => setPassword(e.target.value)}
@@ -182,7 +179,7 @@ function SignIn() {
                   </div>
                   <div>
                     {ErrorMessage && (
-                      <h1 className="flex text-white font-bold p-4 bg-red-700 rounded text-center">
+                      <h1 className="flex text-white font-bold p-4 bg-transparent border border-stone-700 rounded text-center">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -227,25 +224,36 @@ function SignIn() {
                     className={`w-full text-white ${
                       loader
                         ? `bg-stone-700`
-                        : `bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-primary-300`
-                    } transition ease-in-out font-medium rounded-sm text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800`}
+                        : `focus:ring-0 focus:outline-none transition ease-in-out font-medium rounded-sm text-sm px-5 py-2.5 text-center`
+                    }`}
+                    style={{
+                      backgroundColor: loader ? undefined : "#5b7ea4",
+                    }}
                   >
                     {loader ? <ClipLoader color="#ff0000" /> : `Sign in`}
                   </button>
                   <button
                     onClick={loginWithGoogle}
-                    className={`flex justify-center items-center w-full text-white ${
+                    className={`flex justify-center items-center w-full ${
                       loader
                         ? `bg-stone-700`
-                        : `bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-primary-300`
-                    } transition ease-in-out font-medium rounded-sm text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:focus:ring-primary-800`}
+                        : `bg-transparent hover:bg-stone-800 focus:ring-0 focus:outline-none`
+                    } transition ease-in-out font-medium rounded-sm text-sm px-5 py-2.5 text-center`}
                   >
                     {loader ? (
                       <ClipLoader color="#ff0000" />
                     ) : (
                       <>
-                        <img className="w-8" src={GoogleLogo}></img>{" "}
-                        <p className="ml-1">Sign in with Google</p>
+                        <span
+                          className="flex items-center justify-center rounded-sm"
+                          style={{
+                            backgroundColor: "#F5E6CC", // Warm Beige
+                            padding: 4,
+                          }}
+                        >
+                          <img className="w-8" src={GoogleLogo} alt="Google logo" />
+                        </span>
+                        <p className="ml-3 text-blue-600">Sign in with Google</p>
                       </>
                     )}
                   </button>
