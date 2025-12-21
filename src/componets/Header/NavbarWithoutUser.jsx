@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import Logo from "../../images/Logo.png";
+
 
 
 function NavbarWithoutUser() {
@@ -30,7 +30,7 @@ function NavbarWithoutUser() {
         <div className="w-9/12 md:w-11/12">
           <img
             className="h-8 sm:h-10 sm:w-18 ml-8 cursor-pointer"
-            src={Logo}
+            src="/logo.PNG"
             alt="NETFLIX"
           />
         </div>
