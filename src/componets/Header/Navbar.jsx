@@ -5,7 +5,7 @@ import { Fade } from "react-reveal";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 import { AuthContext } from "../../Context/UserContext";
-import Logo from "../../images/logo.PNG";
+
 
 function Navbar(props) {
   const { User } = useContext(AuthContext);
@@ -72,7 +72,7 @@ function Navbar(props) {
                 <div className="flex-shrink-0">
                   <img
                     className="h-6 cursor-pointer w-18"
-                    src={Logo}
+                    src="/logo.PNG"
                     alt="NETFLIX"
                   />
                 </div>
