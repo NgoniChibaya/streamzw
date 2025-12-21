@@ -3,31 +3,29 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 22
     commands:
-      - echo Installing npm dependencies...
-      - npm install -g create-vite
-      - npm install
+      - echo "Installing dependencies..."
+      - npm install --legacy-peer-deps
 
   build:
     commands:
-      - echo Building with Vite...
-      - echo using Mode environment variable "$MODE"
-      - echo "Setting backend URL..."
-      - if [ "$MODE" == "production" ]; then
-        echo "VITE_API_URL=$PROD_BACKEND_URL" >> .env;
-        elif [ "$MODE" == "staging" ]; then
-        echo "VITE_API_URL=$TEST_BACKEND_URL" >> .env;
+      - echo "Building with Vite for mode: $MODE"
+      - |
+        if [ "$MODE" = "production" ]; then
+          echo "VITE_API_URL=$PROD_BACKEND_URL" >> .env
+        elif [ "$MODE" = "staging" ]; then
+          echo "VITE_API_URL=$TEST_BACKEND_URL" >> .env
         else
-        echo "VITE_API_URL=$DEV_BACKEND_URL" >> .env;
+          echo "VITE_API_URL=$DEV_BACKEND_URL" >> .env
         fi
       - npm run build
 
   post_build:
     commands:
-      - echo Build completed...
       - echo "Syncing to S3..."
-      - aws s3 sync dist/ s3://$BUCKET_NAME --region af-south-1;
+      # Added --delete to keep the bucket clean
+      - aws s3 sync dist/ s3://$BUCKET_NAME --region af-south-1 --delete
 
 artifacts:
   files: "**/*"
