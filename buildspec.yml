@@ -27,7 +27,7 @@ phases:
     commands:
       - echo Build completed...
       - echo "Syncing to S3..."
-      - aws s3 sync dist/ s3://$BUCKET_NAME --region af-south-1;
+      - aws s3 sync dist/ s3://streamzw-frontend-bucket --region af-south-1;
 
 artifacts:
   files: "**/*"
