@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo Installing npm dependencies...
+      - npm install -g create-vite
+      - npm install
+
+  build:
+    commands:
+      - echo Building with Vite...
+      - echo using Mode environment variable "$MODE"
+      - echo "Setting backend URL..."
+      - if [ "$MODE" == "production" ]; then
+        echo "VITE_API_URL=$PROD_BACKEND_URL" >> .env;
+        elif [ "$MODE" == "staging" ]; then
+        echo "VITE_API_URL=$TEST_BACKEND_URL" >> .env;
+        else
+        echo "VITE_API_URL=$DEV_BACKEND_URL" >> .env;
+        fi
+      - npm run build
+
+  post_build:
+    commands:
+      - echo Build completed...
+      - echo "Syncing to S3..."
+      - aws s3 sync dist/ s3://$BUCKET_NAME --region af-south-1;
+
+artifacts:
+  files: "**/*"
+  base-directory: "dist"
+  discard-paths: no
