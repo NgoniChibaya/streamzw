@@ -5,7 +5,7 @@ import { Fade } from "react-reveal";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 import { AuthContext } from "../../Context/UserContext";
-import Logo from "../../images/Logo.png";
+import Logo from "../../images/logo.PNG";
 
 function Navbar(props) {
   const { User } = useContext(AuthContext);
