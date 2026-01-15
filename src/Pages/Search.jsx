@@ -22,9 +22,13 @@ function Search() {
   const [moviePopupInfo, setMoviePopupInfo] = useState({});
 
   const Search = (e) => {
-    setSearchQuery(e.target.value);
     e.preventDefault();
     console.log(searchQuery);
+
+    if (searchQuery.trim() === "") {
+      setMovies([]);
+      return;
+    }
 
     axios
       .get(
@@ -34,8 +38,13 @@ function Search() {
         console.log(response.data.results);
         setMovies(response.data.results);
       });
+  };
 
-    if (searchQuery === "") {
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    if (value.trim() === "") {
       setMovies([]);
     }
   };
@@ -50,33 +59,36 @@ function Search() {
       {PopupMessage}
 
       <div className="flex justify-center mt-20 mb-8">
-        <input
-          onChange={Search}
-          type="text"
-          class="w-[60%] xl:w-1/4 bg-stone-700 text-white outline-none sm:text-sm rounded focus:ring-primary-600 focus:border-primary-600 block p-2.5 placeholder:text-white"
-          placeholder="Search for Movie name"
-          required=""
-        ></input>
-        <button
-          onClick={Search}
-          class="flex items-center px-8 text-white bg-red-800 -ml-2 focus:outline-none focus:ring-primary-300 transition ease-in-out font-medium rounded text-sm py-1 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-10 w-10 items-center text-white mt-auto mb-auto pr-4 cursor-pointer"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+        <form onSubmit={Search} className="flex w-[60%] xl:w-1/4">
+          <input
+            onChange={handleInputChange}
+            value={searchQuery}
+            type="text"
+            class="w-full bg-stone-700 text-white outline-none sm:text-sm rounded focus:ring-primary-600 focus:border-primary-600 block p-2.5 placeholder:text-white"
+            placeholder="Search for Movie name"
+            required=""
+          ></input>
+          <button
+            type="submit"
+            class="flex items-center px-8 text-white bg-red-600 hover:bg-red-700 -ml-2 focus:outline-none focus:ring-primary-300 transition ease-in-out font-medium rounded text-sm py-1 text-center"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>{" "}
-          Search
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-10 w-10 items-center text-white mt-auto mb-auto pr-4 cursor-pointer"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>{" "}
+            Search
+          </button>
+        </form>
       </div>
 
       {/* Search results */}
@@ -198,7 +210,7 @@ function Search() {
                     <br></br>
                     <StarRatings
                       rating={movie.vote_average / 2}
-                      starRatedColor="red"
+                      starRatedColor="#5b7ea4"
                       numberOfStars={5}
                       name="rating"
                       starDimension="1.2rem"

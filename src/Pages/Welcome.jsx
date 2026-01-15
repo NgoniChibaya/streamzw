@@ -33,14 +33,13 @@ function Welcome() {
           <div className="w-10/12 text-center sm:w-11/12 md:w-40rem">
             <Fade duration={2000}>
               <h1 className="mb-3 text-3xl font-semibold text-center text-white sm:text-4xl md:text-6xl">
-                Unlimited movies, TV shows and more.
+               Your Stories, Our Home.
               </h1>
               <h1 className="mb-4 text-xl text-center text-stone-400 font-light sm:text-2xl">
-                Watch anywahere.Cancel anytime
+                Experience Zimbabwe's spirit, whenever, wherever.
               </h1>
               <h1 className="mb-2 text-center text-stone-400 font-light sm:text-xl sm:mb-8">
-                Ready to watch? Enter your email to create or restart your
-                membership.
+                  Ready for the journey? Enter your email to unlock StreamZW!"
               </h1>
               <div>
                 <input

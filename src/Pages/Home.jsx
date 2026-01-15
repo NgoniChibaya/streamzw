@@ -22,12 +22,20 @@ import { AuthContext } from "../Context/UserContext";
 function Home() {
   const { User } = useContext(AuthContext);
   const [watchedMovies, setWatchedMovies] = useState([]);
+  const [continueWatching, setContinueWatching] = useState([]);
 
   useEffect(() => {
     getDoc(doc(db, "WatchedMovies", User.uid)).then((result) => {
       if (result.exists()) {
         const mv = result.data();
         setWatchedMovies(mv.movies);
+        
+        // Filter for continue watching (not completed, has progress > 30s)
+        const continuing = mv.movies
+          .filter(m => m.progress > 30 && !m.completed)
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 10);
+        setContinueWatching(continuing);
       }
     });
   }, []);
@@ -37,6 +45,14 @@ function Home() {
       <Banner url={trending}></Banner>
       <div className="w-[99%] ml-1">
         <RowPost first title="Trending" url={trending} key={trending}></RowPost>
+        {continueWatching.length > 0 && (
+          <RowPost
+            title="Continue Watching"
+            movieData={continueWatching}
+            showProgress={true}
+            key="Continue Watching"
+          />
+        )}
         <RowPost title="Animated" url={Animated} key={Animated}></RowPost>
         {watchedMovies.length != 0 ? (
           <RowPost

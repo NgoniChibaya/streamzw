@@ -8,7 +8,7 @@ function usePlayMovie() {
 
   const playMovie = (movie, from) => {
     addToWatchedMovies(movie);
-    navigate(`/play/${movie.id}`, { replace: true, state: { From: from } });
+    navigate(`/play/${movie.id}`, { state: { From: from } });
   };
 
   return { playMovie };

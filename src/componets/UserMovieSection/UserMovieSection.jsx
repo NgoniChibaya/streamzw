@@ -253,7 +253,7 @@ function UserMovieSection(props) {
                       <br></br>
                       <StarRatings
                         rating={movie.vote_average / 2}
-                        starRatedColor="red"
+                        starRatedColor="#5b7ea4"
                         numberOfStars={5}
                         name="rating"
                         starDimension="1.2rem"

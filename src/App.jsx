@@ -20,6 +20,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Loading from "./componets/Loading/Loading";
 import Navbar from "./componets/Header/Navbar";
 import NavbarWithoutUser from "./componets/Header/NavbarWithoutUser";
+import ContactChat from "./componets/ContactChat/ContactChat";
 
 function App() {
   const { User, setUser } = useContext(AuthContext);
@@ -34,6 +35,7 @@ function App() {
   return (
     <div>
       {User ? <Navbar/> : <NavbarWithoutUser/>}
+      <ContactChat />
       <Suspense replace fallback={<Loading />}>
         <Routes>
           <Route index path="/" element={User ? <Home /> : <Welcome />} />

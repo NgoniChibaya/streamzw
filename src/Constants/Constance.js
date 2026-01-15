@@ -1,7 +1,8 @@
-export const baseUrl = "https://api.themoviedb.org/3";
+export const baseUrl = "http://127.0.0.1:8000/api/";
+export const DJANGO_API_URL = "http://localhost:8000/api";
 export const API_KEY = "ecb37597e45cfeed0586f3cd57233d0b";
-export const imageUrl = "https://image.tmdb.org/t/p/original";
-export const imageUrl2 = "https://image.tmdb.org/t/p/w500";
+export const imageUrl = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
+export const imageUrl2 = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
 
 export const genresList = [
   {

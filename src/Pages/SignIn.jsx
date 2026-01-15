@@ -12,7 +12,7 @@ import {
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../Firebase/FirebaseConfig";
 import { AuthContext } from "../Context/UserContext";
-
+import axios from "axios";
 import GoogleLogo from "../images/GoogleLogo.png";
 import WelcomePageBanner from "../images/WelcomBannerNew.png";
 
@@ -24,95 +24,136 @@ function SignIn() {
   const [password, setPassword] = useState("");
   const [ErrorMessage, setErrorMessage] = useState("");
   const [loader, setLoader] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const captchaRendered = React.useRef(false);
 
-  const handleSubmit = (e) => {
+  React.useEffect(() => {
+    window.onCaptchaSuccess = (token) => {
+      setCaptchaToken(token);
+    };
+    
+    // Render reCAPTCHA only once
+    if (window.grecaptcha && !captchaRendered.current) {
+      const interval = setInterval(() => {
+        if (window.grecaptcha.render && document.getElementById('recaptcha-signin')) {
+          window.grecaptcha.render('recaptcha-signin', {
+            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+            'callback': (token) => setCaptchaToken(token)
+          });
+          captchaRendered.current = true;
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!captchaToken) {
+      setErrorMessage("Please complete the captcha");
+      return;
+    }
+    
     setLoader(true);
 
     const auth = getAuth();
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-        console.log(user);
-        if (user != null) {
-          navigate("/");
-        }
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log(user);
+      
+      if (user != null) {
+        const djangoRegisterResponse = await axios.post(
+          "http://localhost:8000/api/firebase-login/",
+          {
+            id_token: user.uid,
+            email: user.email,
+          }
+        );
+
+        console.log("Django login successful:", djangoRegisterResponse.data);
+
+        localStorage.setItem('django_token', djangoRegisterResponse.data.token);
+        localStorage.setItem('django_user_id', djangoRegisterResponse.data.user_id);
+        navigate("/");
+      }
+    } catch (error) {
+      const errorCode = error.code;
+      
+      if (errorCode === 'auth/invalid-login-credentials' || errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found') {
+        setErrorMessage("Wrong email or password");
+      } else {
         setErrorMessage(error.message);
-        setLoader(false);
-        console.log(errorCode);
-        console.log(errorMessage);
-      });
+      }
+      
+      setLoader(false);
+      console.log(errorCode);
+      console.log(error.message);
+    }
   };
 
-  const loginWithGoogle = (e) => {
+  const loginWithGoogle = async (e) => {
     e.preventDefault();
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
 
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        const user = result.user;
-        console.log(user);
-        const EmptyArray = [];
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log("user------", user);
+      const EmptyArray = [];
 
-        setDoc(
-          doc(db, "Users", user.uid),
-          {
-            email: user.email,
-            Uid: user.uid,
-          },
+      await setDoc(
+        doc(db, "Users", user.uid),
+        {
+          email: user.email,
+          Uid: user.uid,
+        },
+        { merge: true }
+      );
+
+      const myListDoc = await getDoc(doc(db, "MyList", user.uid));
+      if (!myListDoc.exists()) {
+        await setDoc(
+          doc(db, "MyList", user.uid),
+          { movies: EmptyArray },
           { merge: true }
-        ).then(() => {
-          getDoc(doc(db, "MyList", user.uid)).then((result) => {
-            if (result.exists()) {
-              // Data exist in MyList section for this user
-            } else {
-              // Creating a new MyList, WatchedMovies List, LikedMovies List for the user in the database
-              setDoc(
-                doc(db, "MyList", user.uid),
-                {
-                  movies: EmptyArray,
-                },
-                { merge: true }
-              );
-              setDoc(
-                doc(db, "WatchedMovies", user.uid),
-                {
-                  movies: EmptyArray,
-                },
-                { merge: true }
-              );
-              setDoc(
-                doc(db, "LikedMovies", user.uid),
-                {
-                  movies: EmptyArray,
-                },
-                { merge: true }
-              ).then(() => {
-                navigate("/");
-              });
-            }
-          });
-        });
-        if (user != null) {
-          navigate("/");
-        }
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        setErrorMessage(error.message);
-        setLoader(false);
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-      });
+        );
+        await setDoc(
+          doc(db, "WatchedMovies", user.uid),
+          { movies: EmptyArray },
+          { merge: true }
+        );
+        await setDoc(
+          doc(db, "LikedMovies", user.uid),
+          { movies: EmptyArray },
+          { merge: true }
+        );
+      }
+
+      if (user != null) {
+        const djangoRegisterResponse = await axios.post(
+          "http://localhost:8000/api/firebase-register/",
+          {
+            id_token: user.uid,
+            email: user.email,
+          }
+        );
+
+        console.log("Django login successful:", djangoRegisterResponse.data);
+
+        localStorage.setItem('django_token', djangoRegisterResponse.data.token);
+        localStorage.setItem('django_user_id', djangoRegisterResponse.data.user_id);
+        navigate("/");
+      }
+    } catch (error) {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      setErrorMessage(error.message);
+      setLoader(false);
+      console.error("Login error:", error);
+    }
   };
 
   return (
@@ -177,6 +218,7 @@ function SignIn() {
                       onChange={(e) => setPassword(e.target.value)}
                     ></input>
                   </div>
+                  <div id="recaptcha-signin"></div>
                   <div>
                     {ErrorMessage && (
                       <h1 className="flex text-white font-bold p-4 bg-transparent border border-stone-700 rounded text-center">
@@ -230,7 +272,7 @@ function SignIn() {
                       backgroundColor: loader ? undefined : "#5b7ea4",
                     }}
                   >
-                    {loader ? <ClipLoader color="#ff0000" /> : `Sign in`}
+                    {loader ? <ClipLoader color="#5b7ea4" /> : `Sign in`}
                   </button>
                   <button
                     onClick={loginWithGoogle}
