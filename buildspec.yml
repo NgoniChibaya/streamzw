@@ -1,31 +1,35 @@
 version: 0.2
+
 phases:
-  pre_build:
+  install:
+    runtime-versions:
+      nodejs: 22
     commands:
-      - echo "Get login password..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - echo Installing npm dependencies...
+      - npm install -g create-vite
+      - npm install --legacy-peer-deps
+
   build:
     commands:
-      - echo "Building docker image..."
-      - docker build -t $IMAGE_REPO_NAME .
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
-      - echo "Pushing docker image to ECR..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Building with Vite...
+      - echo using Mode environment variable "$MODE"
+      - echo "Setting backend URL..."
+      - if [ "$MODE" == "production" ]; then
+        echo "VITE_API_URL=$PROD_BACKEND_URL" >> .env;
+        elif [ "$MODE" == "staging" ]; then
+        echo "VITE_API_URL=$TEST_BACKEND_URL" >> .env;
+        else
+        echo "VITE_API_URL=$DEV_BACKEND_URL" >> .env;
+        fi
+      - npm run build
+
   post_build:
     commands:
-      - echo "Running Django Migrations..."
-      # We pass the environment variables from CodeBuild into the container so it can connect to RDS
-      - docker run --env-file <(printenv) $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG python manage.py migrate --noinput
+      - echo Build completed...
+      - echo "Syncing to S3..."
+      - aws s3 sync dist/ s3://streamzw-frontend-bucket --region af-south-1;
 
-      - echo "Creating Superuser..."
-      - |
-        docker run --env-file <(printenv) $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG python manage.py shell -c "
-        from django.contrib.auth import get_user_model;
-        User = get_user_model();
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser('admin', 'admin@gmail.com', 'Admin@Pass123');
-            print('Superuser created successfully');
-        "
-
-      - echo "Updating lambda Function..."
-      - aws lambda update-function-code --function-name $FUNCTION_NAME --image-uri $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG || true
+artifacts:
+  files: "**/*"
+  base-directory: "dist"
+  discard-paths: no
