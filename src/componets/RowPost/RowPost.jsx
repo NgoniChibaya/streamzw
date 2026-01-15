@@ -21,6 +21,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "./RowPostStyles.scss";
+import instance from "../../axios";
 
 function RowPost(props) {
   const { addToMyList, PopupMessage } = useUpdateMylist();
@@ -60,7 +61,7 @@ function RowPost(props) {
     if (props.movieData != null) {
       setMovies(props.movieData);
     } else {
-      axios.get(props.url).then((response) => {
+      instance.get(props.url).then((response) => {
         console.log(response.data.results);
         setMovies(response.data.results);
       });
@@ -98,7 +99,7 @@ function RowPost(props) {
     setPaymentLoading(true);
     
     // Create payment record in Django backend
-    axios.post('http://localhost:8000/api/payments/create-paystack/', {
+    instance.post('/api/payments/create-paystack', {
       reference: reference.reference,
       movie_id: selectedMovie.id,
       amount: 18.00,
@@ -124,7 +125,7 @@ function RowPost(props) {
     
     // Check if payment was created and verify status
     if (window.paystackPaymentId) {
-      axios.post('http://localhost:8000/api/payments/verify-paystack/', {
+      instance.post('/api/payments/verify-paystack', {
         payment_id: window.paystackPaymentId
       })
       .then((response) => {
@@ -156,7 +157,7 @@ function RowPost(props) {
 
     const checkStatus = async () => {
       try {
-        const response = await axios.post('http://localhost:8000/api/payments/verify-paystack/', {
+        const response = await instance.post('/api/payments/verify-paystack', {
           payment_id: paymentId
         });
         const { status, paid } = response.data;
@@ -197,7 +198,7 @@ function RowPost(props) {
       const userEmail = localStorage.getItem('django_user_email') || 'user@example.com';
       const amount = currency === "USD" ? 1.00 : 32.00;
       
-      const response = await axios.post('http://localhost:8000/api/payments/initiate/', {
+      const response = await instance.post('/api/payments/initiate', {
         movie_id: selectedMovie.id,
         amount: amount,
         currency: currency,
@@ -233,7 +234,7 @@ function RowPost(props) {
       if (!shouldContinue) return;
 
       try {
-        const response = await axios.get(`http://localhost:8000/api/payments/${paymentId}/status/`);
+        const response = await instance.get(`/api/payments/${paymentId}/status`);
         const { status, paid } = response.data;
 
         if (status === 'paid' || paid === true) {
@@ -266,7 +267,7 @@ function RowPost(props) {
 
   const handlePlayMovie = async (movie) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/movies/${movie.id}/check-paid/`);
+      const response = await instance.get(`/api/movies/${movie.id}/check-paid`);
       
       if (response.data.is_paid) {
         playMovie(movie);
@@ -303,8 +304,8 @@ function RowPost(props) {
       setShowModal(true);
       
       // Fetch video preview from Django backend
-      axios
-        .get(`http://localhost:8000/api/movies/${movieInfo.id}/video/`)
+      instance
+        .get(`/api/movies/${movieInfo.id}/video`)
         .then((response) => {
           const s3Url = `https://zim-stream-flix.s3.us-east-1.amazonaws.com/${response.data.s3_file_url}`;
           setPreviewVideoUrl(s3Url);

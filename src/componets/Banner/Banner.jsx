@@ -6,6 +6,7 @@ import { Fade } from "react-reveal";
 import StarRatings from "react-star-ratings";
 import MoviePopUp from "../PopUp/MoviePopUp";
 import usePlayMovie from "../../CustomHooks/usePlayMovie";
+import instance from "../../axios";
 
 function Banner(props) {
   const { showModal, setShowModal } = useContext(PopUpContext);
@@ -26,7 +27,7 @@ function Banner(props) {
 
 
   useEffect(() => {
-    axios.get(props.url).then((response) => {
+    instance.get(props.url).then((response) => {
       setMovie(
         response.data.results.sort(function (a, b) {
           return 0.5 - Math.random();
@@ -47,7 +48,7 @@ function Banner(props) {
     setMoviePopupInfo(movieInfo);
     setShowModal(true);
 
-    axios
+    instance
       .get(`/movie/${movieInfo.id}/videos?api_key=${API_KEY}&language=en-US`)
       .then((responce) => {
         console.log(responce.data);

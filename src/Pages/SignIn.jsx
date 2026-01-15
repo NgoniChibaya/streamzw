@@ -15,6 +15,7 @@ import { AuthContext } from "../Context/UserContext";
 import axios from "axios";
 import GoogleLogo from "../images/GoogleLogo.png";
 import WelcomePageBanner from "../images/WelcomBannerNew.png";
+import instance from "../axios";
 
 function SignIn() {
   const { User, setUser } = useContext(AuthContext);
@@ -64,8 +65,8 @@ function SignIn() {
       console.log(user);
       
       if (user != null) {
-        const djangoRegisterResponse = await axios.post(
-          "http://localhost:8000/api/firebase-login/",
+        const djangoRegisterResponse = await instance.post(
+          "/api/firebase-login",
           {
             id_token: user.uid,
             email: user.email,
@@ -133,8 +134,8 @@ function SignIn() {
       }
 
       if (user != null) {
-        const djangoRegisterResponse = await axios.post(
-          "http://localhost:8000/api/firebase-register/",
+        const djangoRegisterResponse = await instance.post(
+          "/api/firebase-register",
           {
             id_token: user.uid,
             email: user.email,

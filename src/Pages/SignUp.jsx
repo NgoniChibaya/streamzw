@@ -13,6 +13,7 @@ import { AuthContext } from "../Context/UserContext";
 import { ClipLoader } from "react-spinners";
 import WelcomePageBanner from "../images/WelcomBannerNew.png";
 import axios from "axios"; // Import axios for making HTTP requests
+import instance from "../axios";
 
 function SignUp() {
   const { User, setUser } = useContext(AuthContext);
@@ -121,8 +122,8 @@ function SignUp() {
         });
 
       // 3. Send Firebase ID Token to Django backend for registration/login
-      const djangoRegisterResponse = await axios.post(
-        "http://localhost:8000/api/firebase-register/", // **CHANGE THIS URL**
+      const djangoRegisterResponse = await instance.post(
+        "/api/firebase-register", // **CHANGE THIS URL**
         {
           id_token: idToken,
           password: password, // Optionally send password if needed
