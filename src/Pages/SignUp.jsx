@@ -123,7 +123,7 @@ function SignUp() {
 
       // 3. Send Firebase ID Token to Django backend for registration/login
       const djangoRegisterResponse = await instance.post(
-        "/api/firebase-register", // **CHANGE THIS URL**
+        "/firebase-register", // **CHANGE THIS URL**
         {
           id_token: idToken,
           password: password, // Optionally send password if needed

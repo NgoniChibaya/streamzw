@@ -99,7 +99,7 @@ function RowPost(props) {
     setPaymentLoading(true);
     
     // Create payment record in Django backend
-    instance.post('/api/payments/create-paystack', {
+    instance.post('/payments/create-paystack', {
       reference: reference.reference,
       movie_id: selectedMovie.id,
       amount: 18.00,
@@ -125,7 +125,7 @@ function RowPost(props) {
     
     // Check if payment was created and verify status
     if (window.paystackPaymentId) {
-      instance.post('/api/payments/verify-paystack', {
+      instance.post('/payments/verify-paystack', {
         payment_id: window.paystackPaymentId
       })
       .then((response) => {
@@ -157,7 +157,7 @@ function RowPost(props) {
 
     const checkStatus = async () => {
       try {
-        const response = await instance.post('/api/payments/verify-paystack', {
+        const response = await instance.post('/payments/verify-paystack', {
           payment_id: paymentId
         });
         const { status, paid } = response.data;
@@ -198,7 +198,7 @@ function RowPost(props) {
       const userEmail = localStorage.getItem('django_user_email') || 'user@example.com';
       const amount = currency === "USD" ? 1.00 : 32.00;
       
-      const response = await instance.post('/api/payments/initiate', {
+      const response = await instance.post('/payments/initiate', {
         movie_id: selectedMovie.id,
         amount: amount,
         currency: currency,
@@ -234,7 +234,7 @@ function RowPost(props) {
       if (!shouldContinue) return;
 
       try {
-        const response = await instance.get(`/api/payments/${paymentId}/status`);
+        const response = await instance.get(`/payments/${paymentId}/status`);
         const { status, paid } = response.data;
 
         if (status === 'paid' || paid === true) {
@@ -267,7 +267,7 @@ function RowPost(props) {
 
   const handlePlayMovie = async (movie) => {
     try {
-      const response = await instance.get(`/api/movies/${movie.id}/check-paid`);
+      const response = await instance.get(`/movies/${movie.id}/check-paid`);
       
       if (response.data.is_paid) {
         playMovie(movie);
@@ -305,7 +305,7 @@ function RowPost(props) {
       
       // Fetch video preview from Django backend
       instance
-        .get(`/api/movies/${movieInfo.id}/video`)
+        .get(`/movies/${movieInfo.id}/video`)
         .then((response) => {
           const s3Url = `https://zim-stream-flix.s3.us-east-1.amazonaws.com/${response.data.s3_file_url}`;
           setPreviewVideoUrl(s3Url);

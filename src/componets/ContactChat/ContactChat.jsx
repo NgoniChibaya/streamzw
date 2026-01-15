@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Fade } from 'react-reveal';
+import instance from '../../axios';
 
 function ContactChat() {
   const [showChat, setShowChat] = useState(false);
@@ -31,7 +32,7 @@ function ContactChat() {
   const fetchMessages = async () => {
     try {
       const token = localStorage.getItem('django_token');
-      const response = await fetch('http://localhost:8000/api/contact/messages/', {
+      const response = await instance.get('/contact/messages', {
         headers: {
           'Authorization': `Token ${token}`,
         }
@@ -83,11 +84,8 @@ function ContactChat() {
     setMessages([...messages, userMessage]);
     
     try {
-      const response = await fetch('http://localhost:8000/api/contact/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, subject, message })
-      });
+      const response = await instance.post('/contact', {name, email, subject, message });
+
       
       const data = await response.json();
       console.log('Message sent, response:', data);

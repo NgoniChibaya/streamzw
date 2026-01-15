@@ -66,7 +66,7 @@ function SignIn() {
       
       if (user != null) {
         const djangoRegisterResponse = await instance.post(
-          "/api/firebase-login",
+          "/firebase-login",
           {
             id_token: user.uid,
             email: user.email,
@@ -135,7 +135,7 @@ function SignIn() {
 
       if (user != null) {
         const djangoRegisterResponse = await instance.post(
-          "/api/firebase-register",
+          "/firebase-register",
           {
             id_token: user.uid,
             email: user.email,
