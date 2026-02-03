@@ -169,7 +169,7 @@ function Profile() {
                     ? `${profilePic}`
                     : `https://www.citypng.com/public/uploads/preview/profile-user-round-red-icon-symbol-download-png-11639594337tco5j3n0ix.png`
                 }
-                alt="NETFLIX"
+                alt="Profile"
               />
               <div>
                 <hr className="mb-2 h-px bg-gray-500 border-0 dark:bg-gray-700"></hr>
@@ -284,7 +284,7 @@ function Profile() {
               {userName != "" || newProfielPic != "" ? (
                 <button
                   onClick={changeUserName}
-                  className="flex items-center bg-[#5b7ea4] text-white font-medium sm:font-bold text-xs px-10 md:px-16 md:text-xl  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-[#5b7ea4] outline-none focus:outline-none mr-3 mb-1 ease-linear transition-all duration-150"
+                  className="flex items-center bg-red-800 text-white font-medium sm:font-bold text-xs px-10 md:px-16 md:text-xl  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-red-800 outline-none focus:outline-none mr-3 mb-1 ease-linear transition-all duration-150\"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

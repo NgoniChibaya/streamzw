@@ -72,12 +72,12 @@ function Home() {
           url={trendingSeries}
           key={trendingSeries}
         ></RowPost>
-        <RowPost title="Science Fiction" url={SciFi}></RowPost>
-        <RowPost title="Upcoming Movies" url={UpcomingMovies}></RowPost>
-        <RowPost title="Comedy" url={comedy}></RowPost>
-        <RowPost title="Adventure" url={Adventure}></RowPost>
-        <RowPost title="Horror" url={horror}></RowPost>
-        <RowPost title="War" url={War}></RowPost>
+        <RowPost title="Science Fiction" url={SciFi} key={SciFi}></RowPost>
+        <RowPost title="Upcoming Movies" url={UpcomingMovies} key={UpcomingMovies}></RowPost>
+        <RowPost title="Comedy" url={comedy} key={comedy}></RowPost>
+        <RowPost title="Adventure" url={Adventure} key={Adventure}></RowPost>
+        <RowPost title="Horror" url={horror} key={horror}></RowPost>
+        <RowPost title="War" url={War} key={War}></RowPost>
       </div>
       <Footer></Footer>
     </div>

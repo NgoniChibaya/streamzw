@@ -13,6 +13,7 @@ const ErrorPage = lazy(() => import("./Pages/ErrorPage"));
 const Play = lazy(() => import("./Pages/Play"));
 const LikedMovies = lazy(() => import("./Pages/LikedMovies"));
 const History = lazy(() => import("./Pages/History"));
+const ForgotPassword = lazy(() => import("./Pages/ForgotPassword"));
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./Context/UserContext";
@@ -23,7 +24,8 @@ import NavbarWithoutUser from "./componets/Header/NavbarWithoutUser";
 import ContactChat from "./componets/ContactChat/ContactChat";
 
 function App() {
-  const { User, setUser } = useContext(AuthContext);
+  const { User, setUser, isPlaying } = useContext(AuthContext);
+
   useEffect(() => {
     const auth = getAuth();
     onAuthStateChanged(auth, (user) => {
@@ -34,7 +36,7 @@ function App() {
 
   return (
     <div>
-      {User ? <Navbar/> : <NavbarWithoutUser/>}
+      {!isPlaying && (User ? <Navbar/> : <NavbarWithoutUser/>)}
       <ContactChat />
       <Suspense replace fallback={<Loading />}>
         <Routes>
@@ -55,6 +57,7 @@ function App() {
 
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<ErrorPage />} />
         </Routes>
       </Suspense>

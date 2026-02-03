@@ -23,39 +23,11 @@ function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [ErrorMessage, setErrorMessage] = useState("");
   const [loader, setLoader] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRendered = React.useRef(false);
-
-  React.useEffect(() => {
-    window.onCaptchaSuccess = (token) => {
-      setCaptchaToken(token);
-    };
-    
-    // Render reCAPTCHA only once
-    if (window.grecaptcha && !captchaRendered.current) {
-      const interval = setInterval(() => {
-        if (window.grecaptcha.render && document.getElementById('recaptcha-signup')) {
-          window.grecaptcha.render('recaptcha-signup', {
-            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
-            'callback': (token) => setCaptchaToken(token)
-          });
-          captchaRendered.current = true;
-          clearInterval(interval);
-        }
-      }, 100);
-    }
-  }, []);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => { // Made handleSubmit async
     e.preventDefault();
-    
-    if (!captchaToken) {
-      setErrorMessage("Please complete the captcha");
-      return;
-    }
-    
     setLoader(true);
     setErrorMessage(""); // Clear previous errors
 
@@ -123,7 +95,7 @@ function SignUp() {
 
       // 3. Send Firebase ID Token to Django backend for registration/login
       const djangoRegisterResponse = await instance.post(
-        "/firebase-register", // **CHANGE THIS URL**
+        "/firebase-register/", // **CHANGE THIS URL**
         {
           id_token: idToken,
           password: password, // Optionally send password if needed
@@ -242,7 +214,6 @@ function SignUp() {
                       required
                     ></input>
                   </div>
-                  <div id="recaptcha-signup"></div>
                   <div>
                     {ErrorMessage && (
                       <h1 className="flex text-white font-bold p-4 bg-red-700 rounded text-center">

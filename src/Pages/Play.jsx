@@ -12,6 +12,11 @@ import Navbar from "../componets/Header/Navbar";
 import Footer from "../componets/Footer/Footer";
 import useUpdateMylist from "../CustomHooks/useUpdateMylist";
 import useUpdateLikedMovies from "../CustomHooks/useUpdateLikedMovies";
+import useNetworkStatus from "../CustomHooks/useNetworkStatus";
+import DownloadButton from "../componets/Download/DownloadButton";
+import DownloadProgress from "../componets/Download/DownloadProgress";
+import { checkIfDownloaded, getDownloadedMovie } from "../Services/downloadService";
+import { schedulePeriodicCleanup } from "../Services/storageCleanup";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -19,7 +24,9 @@ import "swiper/css/pagination";
 import usePlayMovie from "../CustomHooks/usePlayMovie";
 import useUpdateWatchedMovies from "../CustomHooks/useUpdateWatchedMovies";
 
+
 function Play() {
+  const [isPlaying, setIsPlayingLocal] = useState(true);
   const [urlId, setUrlId] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoError, setVideoError] = useState(false);
@@ -34,17 +41,23 @@ function Play() {
   const [qualityLevels, setQualityLevels] = useState([]);
   const [currentQuality, setCurrentQuality] = useState(-1);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentBitrate, setCurrentBitrate] = useState(0);
+  const [isDownloaded, setIsDownloaded] = useState(false);
+  const [showDownloadProgress, setShowDownloadProgress] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState('idle');
+  const [downloadData, setDownloadData] = useState(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const videoRef = React.useRef(null);
   const hlsRef = React.useRef(null);
   const containerRef = React.useRef(null);
   const controlsTimeoutRef = React.useRef(null);
+  
 
   const { addToMyList, removeFromMyList, PopupMessage } = useUpdateMylist();
   const { addToLikedMovies, removeFromLikedMovies, LikedMoviePopupMessage } =
@@ -52,43 +65,70 @@ function Play() {
   const { removeFromWatchedMovies, updateWatchProgress, removePopupMessage } =
     useUpdateWatchedMovies();
   const { playMovie } = usePlayMovie();
+  const { isOnline } = useNetworkStatus();
 
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { User } = useContext(AuthContext);
+  const { User, setIsPlaying } = useContext(AuthContext);
+
+  useEffect(() => {
+    // Set navbar hidden when entering play page
+    setIsPlaying(true);
+    
+    return () => {
+      // Show navbar when leaving play page
+      setIsPlaying(false);
+    };
+  }, [setIsPlaying]);
 
   useEffect(() => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
     
-    if (location.state.From === "MyList") {
+    // Initialize storage cleanup
+    schedulePeriodicCleanup();
+
+    // Check if video is downloaded
+    checkIfDownloaded(id).then(setIsDownloaded);
+    
+    if (location.state?.From === "MyList") {
       setIsFromMyList(true);
     }
-    if (location.state.From === "LikedMovies") {
+    if (location.state?.From === "LikedMovies") {
       setIsFromLikedMovies(true);
     }
-    if (location.state.From === "WatchedMovies") {
+    if (location.state?.From === "WatchedMovies") {
       setIsFromWatchedMovies(true);
     }
 
     // Check for saved progress from Firestore
-    const checkProgress = async () => {
-      try {
-        const docSnap = await getDoc(doc(db, "WatchedMovies", User.uid));
-        if (docSnap.exists()) {
-          const movies = docSnap.data().movies;
-          const movie = movies.find(m => m.id === parseInt(id));
-          
-          if (movie && movie.progress > 30 && !movie.completed) {
-            setSavedProgress(movie.progress);
-            setShowContinuePrompt(true);
-          }
-        }
-      } catch (error) {
-        console.log("No saved progress", error);
+const checkProgress = async () => {
+  // 1. Guard against null user
+  if (!User?.uid) return; 
+
+  try {
+    console.log("Checking progress for user:", User.uid);
+    const docRef = doc(db, "WatchedMovies", User.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const movies = docSnap.data().movies || [];
+      // 2. Use String comparison to avoid type errors
+      const movie = movies.find(m => String(m.id) === String(id));
+      
+      console.log("Found movie in history:", movie);
+
+      // 3. Ensure the progress is actually a number and significant
+      if (movie && movie.progress > 10 && !movie.completed) {
+        setSavedProgress(movie.progress);
+        setShowContinuePrompt(true);
       }
-    };
+    }
+  } catch (error) {
+    console.error("Error fetching progress:", error);
+  }
+};
     
     checkProgress();
 
@@ -96,8 +136,16 @@ function Play() {
     axios
       .get(`${DJANGO_API_URL}/movies/${id}/video/`)
       .then((response) => {
-        const s3Url = `https://streamzw-content.s3.us-east-1.amazonaws.com/processed/${response.data.video_url}`;
-        setVideoUrl(s3Url);
+        const { video_url, cookies } = response.data;
+        
+        // Set CloudFront cookies
+        if (cookies) {
+          Object.keys(cookies).forEach(key => {
+            document.cookie = `${key}=${cookies[key]}; path=/; domain=.cloudfront.net`;
+          });
+        }
+        
+        setVideoUrl(video_url);
         setVideoError(false);
         
         // Try native video element first for HLS
@@ -111,7 +159,7 @@ function Play() {
             });
             hlsRef.current = hls;
             
-            hls.loadSource(s3Url);
+            hls.loadSource(video_url);
             hls.attachMedia(videoRef.current);
             
             hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
@@ -139,7 +187,7 @@ function Play() {
             });
           } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
             // Safari native HLS
-            videoRef.current.src = s3Url;
+            videoRef.current.src = video_url;
             setQualityLevels([
               { index: 0, height: 1080, label: '1080p' },
               { index: 1, height: 720, label: '720p' },
@@ -175,17 +223,45 @@ function Play() {
       });
     
     return () => {
+      setIsPlaying(false);
       if (hlsRef.current) {
         hlsRef.current.destroy();
       }
     };
-  }, []);
+  }, [User, id]);
 
   const handleQualityChange = (levelIndex) => {
     if (hlsRef.current) {
       hlsRef.current.currentLevel = levelIndex;
       setCurrentQuality(levelIndex);
       setShowQualityMenu(false);
+    }
+  };
+
+  const handleDownload = async (quality) => {
+    try {
+      setIsDownloading(true);
+      const { initializeDownload, downloadSegments } = await import('../Services/downloadService');
+      
+      const downloadData = await initializeDownload(parseInt(id), movieDetails, quality);
+      
+      setDownloadData(downloadData);
+      setDownloadStatus('downloading');
+      setShowDownloadMenu(false);
+      setShowDownloadProgress(true);
+
+      // Start segment download in background
+      setTimeout(() => {
+        downloadSegments(
+          parseInt(id),
+          downloadData.s3Url,
+          downloadData.selectedLevel
+        ).catch(console.error);
+      }, 100);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert(`Download failed: ${error.message}`);
+      setIsDownloading(false);
     }
   };
 
@@ -247,9 +323,38 @@ function Play() {
 
   return (
     <div>
-      <Navbar playPage></Navbar>
-
       {PopupMessage}
+
+      {/* Network Status Indicator */}
+      {!isOnline && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-yellow-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            className="w-4 h-4"
+          >
+            <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" />
+          </svg>
+          You're offline. Offline downloads are available to watch.
+        </div>
+      )}
+
+      {/* Download Progress Modal */}
+      {showDownloadProgress && downloadData && (
+        <DownloadProgress
+          movieId={parseInt(id)}
+          movieTitle={movieDetails.original_title || movieDetails.title}
+          onComplete={() => {
+            setShowDownloadProgress(false);
+            setIsDownloaded(true);
+          }}
+          onCancel={() => {
+            setShowDownloadProgress(false);
+            setIsDownloading(false);
+          }}
+        />
+      )}
 
       {/* Continue Watching Prompt */}
       {showContinuePrompt && (
@@ -283,7 +388,7 @@ function Play() {
         </div>
       )}
 
-      <div className="mt-12 h-[31vh] sm:h-[42vh] md:h-[45vh] lg:h-[55vh] lg:mt-0 xl:h-[98vh] relative bg-black">
+      <div className="mt-20 h-[40vh] sm:h-[50vh] md:h-[55vh] lg:h-[65vh] lg:mt-20 xl:h-[98vh] relative bg-black flex items-center justify-center sm:block">
         {videoError ? (
           <div className="flex flex-col items-center justify-center h-full bg-black">
             <svg
@@ -315,180 +420,126 @@ function Play() {
             <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none"></div>
             
             {/* Close button */}
-            <button
-              onClick={() => navigate("/series")}
-              className="absolute top-6 left-6 z-50 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-80 transition-all duration-200 backdrop-blur-sm"
-              title="Close"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+
 
             {/* Video player */}
-            <div 
-              ref={containerRef}
-              className="relative bg-black group h-full"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={() => isPlaying && setShowControls(false)}
-            >
-              <video
-                ref={videoRef}
-                width="100%"
-                height="100%"
-                style={{ height: "100%", objectFit: "contain" }}
-                autoPlay
-                className="bg-black"
-                onClick={togglePlay}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onTimeUpdate={(e) => {
-                  setCurrentTime(e.target.currentTime);
-                  setDuration(e.target.duration);
-                  if (Math.floor(e.target.currentTime) % 10 === 0) {
-                    updateWatchProgress(parseInt(id), e.target.currentTime, e.target.duration);
-                  }
-                }}
-                onLoadedMetadata={(e) => setDuration(e.target.duration)}
-                onEnded={() => {
-                  if (videoRef.current) {
-                    updateWatchProgress(parseInt(id), videoRef.current.currentTime, videoRef.current.duration);
-                  }
-                }}
-              >
-                Your browser does not support the video tag.
-              </video>
-              
-              {/* Custom Controls */}
-              <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-                {/* Progress Bar */}
-                <div className="px-4 pt-2">
-                  <div 
-                    className="h-1 bg-gray-600 rounded cursor-pointer group/progress hover:h-2 transition-all"
-                    onClick={handleSeek}
-                  >
-                    <div 
-                      className="h-full bg-[#5b7ea4] rounded relative"
-                      style={{ width: `${(currentTime / duration) * 100}%` }}
-                    >
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100"></div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Controls Bar */}
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-4">
-                    {/* Play/Pause */}
-                    <button onClick={togglePlay} className="text-white hover:text-[#5b7ea4] transition">
-                      {isPlaying ? (
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      )}
-                    </button>
-                    
-                    {/* Volume */}
-                    <div className="flex items-center gap-2 group/volume">
-                      <button className="text-white hover:text-[#5b7ea4] transition">
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-                        </svg>
-                      </button>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="1" 
-                        step="0.1" 
-                        value={volume}
-                        onChange={handleVolumeChange}
-                        className="w-0 group-hover/volume:w-20 transition-all opacity-0 group-hover/volume:opacity-100"
-                      />
-                    </div>
-                    
-                    {/* Time */}
-                    <span className="text-white text-sm">
-                      {formatTime(currentTime)} / {formatTime(duration)}
-                    </span>
-                    
-                    {/* Current Quality Indicator */}
-                    {currentBitrate > 0 && (
-                      <span className="text-[#5b7ea4] text-xs font-medium">
-                        {currentBitrate} kbps
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    {/* Quality Selector */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowQualityMenu(!showQualityMenu)}
-                        className="text-white hover:text-[#5b7ea4] transition flex items-center gap-1 bg-white/10 px-3 py-1 rounded"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-                        </svg>
-                        <span className="text-sm font-medium">
-                          {qualityLevels.length > 0 
-                            ? (currentQuality === -1 ? 'Auto' : qualityLevels.find(l => l.index === currentQuality)?.label)
-                            : 'Quality'
-                          }
-                        </span>
-                      </button>
-                      
-                      {showQualityMenu && (
-                        <div className="absolute bottom-full mb-2 right-0 bg-black/95 rounded overflow-hidden min-w-[120px] border border-white/20">
-                          <button
-                            onClick={() => handleQualityChange(-1)}
-                            className={`block w-full text-left px-4 py-2 text-white text-sm hover:bg-[#5b7ea4] transition ${currentQuality === -1 ? 'bg-[#5b7ea4]' : ''}`}
-                          >
-                            Auto
-                          </button>
-                          {qualityLevels.length > 0 && qualityLevels.map((level) => (
-                            <button
-                              key={level.index}
-                              onClick={() => handleQualityChange(level.index)}
-                              className={`block w-full text-left px-4 py-2 text-white text-sm hover:bg-[#5b7ea4] transition ${currentQuality === level.index ? 'bg-[#5b7ea4]' : ''}`}
-                            >
-                              {level.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Fullscreen */}
-                    <button onClick={toggleFullscreen} className="text-white hover:text-[#5b7ea4] transition">
-                      {isFullscreen ? (
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-                        </svg>
-                      ) : (
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+{/* Updated Video Player Section */}
+<div className="mt-16 sm:mt-20 w-full bg-black relative">
+  <div 
+    ref={containerRef}
+    className="relative w-full max-w-6xl mx-auto aspect-video bg-black group overflow-hidden shadow-2xl"
+    onMouseMove={handleMouseMove}
+  >
+    {/* Close Button - Sleeker, top-right */}
+    <button
+      onClick={() => navigate("/series")}
+      className={`absolute top-4 right-4 z-50 p-2 rounded-full bg-black/40 text-white transition-opacity duration-300 hover:bg-black/70 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <video
+      ref={videoRef}
+      className="w-full h-full object-contain cursor-pointer"
+      autoPlay
+      onClick={togglePlay}
+      onPlay={() => setIsPlayingLocal(true)}
+      onPause={() => setIsPlayingLocal(false)}
+      onTimeUpdate={(e) => {
+        setCurrentTime(e.target.currentTime);
+        setDuration(e.target.duration);
+      }}
+    >
+      Your browser does not support the video tag.
+    </video>
+
+    {/* Controls Overlay */}
+    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      
+      {/* Center Play/Pause Button (Facebook Style) */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <button onClick={togglePlay} className="p-4 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-transform transform hover:scale-110">
+          {isPlaying ? (
+            <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+          ) : (
+            <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
+      </div>
+
+      {/* Bottom Controls Area */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6">
+        
+        {/* Progress Bar - Full Width at bottom */}
+        <div className="relative w-full h-1.5 bg-gray-600 rounded-full mb-4 cursor-pointer group/progress" onClick={handleSeek}>
+          <div 
+            className="absolute top-0 left-0 h-full bg-[#5b7ea4] rounded-full flex items-center justify-end"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          >
+            <div className="w-3 h-3 bg-white rounded-full scale-0 group-hover/progress:scale-100 transition-transform shadow-lg" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-5">
+            {/* Minimal Time Display */}
+            <div className="text-white text-[10px] sm:text-xs font-medium bg-black/20 px-2 py-1 rounded">
+              {formatTime(currentTime)} / {formatTime(duration)}
             </div>
+
+            {/* Volume Icon only on Mobile, Slider on Desktop */}
+            <div className="flex items-center gap-2 group/vol">
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+              <input 
+                type="range" min="0" max="1" step="0.1" value={volume} 
+                onChange={handleVolumeChange}
+                className="hidden sm:block w-0 group-hover/vol:w-20 transition-all accent-[#5b7ea4]"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Bitrate badge */}
+            {currentBitrate > 0 && (
+              <span className="hidden sm:block text-[10px] text-gray-300 border border-gray-500 px-1.5 py-0.5 rounded">
+                {currentBitrate} kbps
+              </span>
+            )}
+
+            {/* Quality Menu Button */}
+            <div className="relative">
+              <button onClick={() => setShowQualityMenu(!showQualityMenu)} className="text-white hover:text-[#5b7ea4] transition flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                {currentQuality === -1 ? 'Auto' : `${qualityLevels[currentQuality]?.height}p`}
+              </button>
+              {showQualityMenu && (
+                <div className="absolute bottom-full right-0 mb-2 bg-neutral-900 border border-white/10 rounded shadow-xl overflow-hidden z-[60]">
+                  {qualityLevels.map((l) => (
+                    <button key={l.index} onClick={() => handleQualityChange(l.index)} className="block w-full text-left px-4 py-2 text-xs text-white hover:bg-[#5b7ea4] transition">
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Download Icon */}
+            <button onClick={() => setShowDownloadMenu(!showDownloadMenu)} className="text-white hover:text-[#5b7ea4] p-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            </button>
+
+            {/* Fullscreen Icon */}
+            <button onClick={toggleFullscreen} className="text-white hover:text-[#5b7ea4] p-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
           </>
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -547,11 +598,11 @@ function Play() {
                       );
                     })}
                 </h1>
-                <div className="hidden lg:flex lg:mt-3">
+                <div className="hidden lg:flex lg:mt-3 lg:gap-3">
                   {isFromMyList ? (
                     <button
                       onClick={() => removeFromMyList(movieDetails)}
-                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs sm:text-lg sd:text-xl py-3 lg:px-10 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
+                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs sm:text-lg sd:text-xl py-3 lg:px-10 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -572,7 +623,7 @@ function Play() {
                   ) : isFromWatchedMovies ? (
                     <button
                       onClick={() => removeFromWatchedMovies(movieDetails)}
-                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-semibold text-xs sm:text-lg lg:px-10 xl:font-bold py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
+                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-semibold text-xs sm:text-lg lg:px-10 xl:font-bold py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -593,11 +644,11 @@ function Play() {
                   ) : (
                     <button
                       onClick={() => addToMyList(movieDetails)}
-                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-semibold text-xs sm:text-lg lg:px-10 xl:font-bold py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
+                      className="group flex items-center border-[0.7px] border-white text-white font-medium sm:font-semibold text-xs sm:text-lg lg:px-10 xl:font-bold py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 mr-1  ml-2 text-white hover:text-red-700 group-hover:text-red-700 ease-linear transition-all duration-150"
+                        className="h-6 w-6 mr-1  ml-2 text-white hover:text-[#5b7ea4] group-hover:text-[#5b7ea4] ease-linear transition-all duration-150"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -616,7 +667,7 @@ function Play() {
                   {isFromLikedMovies ? (
                     <button
                       onClick={() => removeFromLikedMovies(movieDetails)}
-                      className="border-white text-white p-4 rounded-full border-2 sm:ml-4 text-xs sm:mt-4 sm:text-lg md:text-xl shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
+                      className="border-white text-white p-4 rounded-full border-2 sm:ml-4 text-xs sm:mt-4 sm:text-lg md:text-xl shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -636,7 +687,7 @@ function Play() {
                   ) : (
                     <button
                       onClick={() => addToLikedMovies(movieDetails)}
-                      className="border-white text-white p-4 rounded-full border-2 sm:ml-4 text-xs sm:mt-4 sm:text-lg md:text-xl shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
+                      className="border-white text-white p-4 rounded-full border-2 sm:ml-4 text-xs sm:mt-4 sm:text-lg md:text-xl shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -654,6 +705,8 @@ function Play() {
                       </svg>
                     </button>
                   )}
+
+                  {/* Download Button */}
                 </div>
               </div>
             </div>
@@ -686,14 +739,14 @@ function Play() {
                       })}
                   </h1>
                 </div>
-                <div>
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => addToMyList(movieDetails)}
-                    className="group flex items-center justify-center w-full border-[0.7px] border-white text-white font-medium sm:font-bold text-xs sm:px-12 sm:text-lg md:px-16 sd:text-xl  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
+                    className="group flex items-center justify-center w-full border-[0.7px] border-white text-white font-medium sm:font-bold text-xs sm:px-12 sm:text-lg md:px-16 sd:text-xl  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mt-4 mb-3 ease-linear transition-all duration-150"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 mr-1  ml-2 text-white hover:text-red-700 group-hover:text-red-700 ease-linear transition-all duration-150"
+                      className="h-6 w-6 mr-1  ml-2 text-white hover:text-[#5b7ea4] group-hover:text-[#5b7ea4] ease-linear transition-all duration-150"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -709,7 +762,7 @@ function Play() {
                   </button>
                   <button
                     onClick={() => navigate("/")}
-                    className="group flex items-center justify-center w-full bg-red-600 border-white text-white font-medium sm:font-bold text-xs sm:mt-4 sm:px-12 sm:text-lg md:px-16 md:text-xl py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-red-700 outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
+                    className="group flex items-center justify-center w-full bg-[#5b7ea4] border-white text-white font-medium sm:font-bold text-xs sm:mt-4 sm:px-12 sm:text-lg md:px-16 md:text-xl py-3 rounded shadow hover:shadow-lg hover:bg-white hover:border-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-3 ease-linear transition-all duration-150"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

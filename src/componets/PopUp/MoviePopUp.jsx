@@ -8,6 +8,7 @@ import usePlayMovie from "../../CustomHooks/usePlayMovie";
 import useGenereConverter from "../../CustomHooks/useGenereConverter";
 import useUpdateLikedMovies from "../../CustomHooks/useUpdateLikedMovies";
 import useUpdateWatchedMovies from "../../CustomHooks/useUpdateWatchedMovies";
+import { initializeDownload, downloadSegments } from "../../Services/downloadService";
 
 function MoviePopUp(props) {
   const { showModal, setShowModal } = useContext(PopUpContext);
@@ -19,24 +20,87 @@ function MoviePopUp(props) {
   const { convertGenere } = useGenereConverter();
 
   const [PopupInfo, setPopupInfo] = useState({});
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadNotification, setDownloadNotification] = useState(null);
 
   useEffect(() => {
-    setPopupInfo(props.data1);
-  }, []);
+    if (props.data1) {
+      setPopupInfo(props.data1);
+    }
+  }, [props.data1]);
+
+  const handleDownload = async (quality = "720") => {
+    try {
+      setIsDownloading(true);
+      setShowQualityMenu(false);
+
+      // Close popup immediately
+      setShowModal(false);
+
+      // Show notification that download has started
+      setDownloadNotification("Download started in background...");
+
+      // Initialize and start download in background
+      const downloadData = await initializeDownload(
+        PopupInfo.id,
+        PopupInfo,
+        quality
+      );
+
+      // Start segment download without blocking
+      downloadSegments(
+        PopupInfo.id,
+        downloadData.s3Url,
+        downloadData.selectedLevel
+      )
+        .then(() => {
+          // Show completion notification
+          setDownloadNotification("Download completed successfully!");
+          setTimeout(() => {
+            setDownloadNotification(null);
+          }, 3000);
+        })
+        .catch((error) => {
+          console.error("Download error:", error);
+          setDownloadNotification("Download failed. Try again.");
+          setTimeout(() => {
+            setDownloadNotification(null);
+          }, 3000);
+        })
+        .finally(() => {
+          setIsDownloading(false);
+        });
+    } catch (error) {
+      console.error("Download initialization failed:", error);
+      setDownloadNotification("Download failed. Try again.");
+      setTimeout(() => {
+        setDownloadNotification(null);
+      }, 3000);
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <>
       {PopupMessage}
+      {/* Download Notification */}
+      {downloadNotification && (
+        <div className="fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded shadow-lg z-[999] animate-pulse">
+          {downloadNotification}
+        </div>
+      )}
       {showModal && (
         <>
-          <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+          <div className="opacity-40 fixed inset-0 z-40 bg-black pointer-events-none"></div>
+          <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none pointer-events-auto">
             <div className="relative w-auto mt-24 sm:my-6 mx-4 max-w-3xl">
               {/*content*/}
               <Fade bottom duration={500}>
                 <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-neutral-800 outline-none focus:outline-none">
                   {/*header*/}
                   <button
-                    className="group p-1 ml-2 mt-2 backdrop-blur-[20px] bg-transparent border-2 border-white hover:bg-white hover:text-black fixed right-4 rounded-full cursor-pointer float-right font-semibold outline-none focus:outline-none ease-linear transition-all duration-150"
+                    className="group p-1 absolute top-2 right-2 backdrop-blur-[20px] bg-transparent border-2 border-white hover:bg-white hover:text-black rounded-full cursor-pointer font-semibold outline-none focus:outline-none ease-linear transition-all duration-150 z-10"
                     onClick={() => setShowModal(false)}
                   >
                     <svg
@@ -61,7 +125,7 @@ function MoviePopUp(props) {
 
                   <div className="flex ml-4 items-center -mt-14">
                     <button
-                      className="flex items-center justify-center bg-red-800 text-white active:bg-red-800 font-medium sm:font-bold uppercase text-xs px-4 sm:px-6 md:text-sm  py-2 rounded shadow hover:shadow-lg cursor-pointer outline-none focus:outline-none mr-3 mb-1 ease-linear transition-all duration-150"
+                      className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white active:bg-blue-700 font-medium sm:font-bold uppercase text-xs px-4 sm:px-6 md:text-sm  py-2 rounded shadow hover:shadow-lg cursor-pointer outline-none focus:outline-none mr-3 mb-1 ease-linear transition-all duration-150"
                       type="button"
                       onClick={() => {
                         setShowModal(false);
@@ -82,6 +146,60 @@ function MoviePopUp(props) {
                       </svg>
                       Play
                     </button>
+                    {/* Download Button */}
+                    <div className="relative">
+                      <button
+                        className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium sm:font-bold uppercase text-xs px-4 sm:px-6 md:text-sm py-2 rounded shadow hover:shadow-lg cursor-pointer outline-none focus:outline-none mr-3 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                        onClick={() => setShowQualityMenu(!showQualityMenu)}
+                        disabled={isDownloading}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="h-6 w-6 mr-1 text-white ease-linear transition-all duration-150"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                          />
+                        </svg>
+                        {isDownloading ? "Downloading..." : "Download"}
+                      </button>
+
+                      {showQualityMenu && !isDownloading && (
+                        <div className="absolute top-full mt-2 right-0 bg-neutral-800 border border-neutral-700 rounded shadow-lg overflow-hidden z-50">
+                          <button
+                            onClick={() => handleDownload("auto")}
+                            className="block w-full text-left px-4 py-2 text-white text-sm hover:bg-neutral-700 transition"
+                          >
+                            Auto Quality
+                          </button>
+                          <button
+                            onClick={() => handleDownload("1080")}
+                            className="block w-full text-left px-4 py-2 text-white text-sm hover:bg-neutral-700 transition"
+                          >
+                            1080p
+                          </button>
+                          <button
+                            onClick={() => handleDownload("720")}
+                            className="block w-full text-left px-4 py-2 text-white text-sm hover:bg-neutral-700 transition"
+                          >
+                            720p
+                          </button>
+                          <button
+                            onClick={() => handleDownload("480")}
+                            className="block w-full text-left px-4 py-2 text-white text-sm hover:bg-neutral-700 transition border-t border-neutral-700"
+                          >
+                            480p (Low)
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     {props.from === "LikedMovies" ? (
                       <div
                         onClick={() => removeFromLikedMovies(PopupInfo)}
@@ -151,15 +269,23 @@ function MoviePopUp(props) {
                         <h1 className="flex -mt-4 text-neutral-400 text-sm leading-relaxed">
                           Rating :
                           <div className="ml-2">
-                            {PopupInfo.vote_average && (
+                            {PopupInfo.vote_average && 
+                             typeof PopupInfo.vote_average === 'number' && 
+                             !isNaN(PopupInfo.vote_average) &&
+                             PopupInfo.vote_average > 0 && (
                               <StarRatings
-                                rating={PopupInfo.vote_average / 2}
+                                rating={Math.max(0, Math.min(5, PopupInfo.vote_average / 2))}
                                 starRatedColor="#5b7ea4"
+                                starEmptyColor="rgba(91, 126, 164, 0.3)"
                                 numberOfStars={5}
-                                name="rating"
-                                starDimension="1rem"
-                                starSpacing="0.2rem"
+                                starDimension="16px"
+                                starSpacing="2px"
                               />
+                            )}
+                            {(!PopupInfo.vote_average || 
+                              typeof PopupInfo.vote_average !== 'number' || 
+                              isNaN(PopupInfo.vote_average)) && (
+                              <span className="text-gray-400 text-xs">N/A</span>
                             )}
                           </div>
                         </h1>
@@ -193,7 +319,7 @@ function MoviePopUp(props) {
                     <div className="flex justify-between p-2">
                       {props.from === "MyList" ? (
                         <button
-                          className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-red-700 outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
+                          className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
                           type="button"
                           onClick={() => removeFromMyList(PopupInfo)}
                         >
@@ -203,7 +329,7 @@ function MoviePopUp(props) {
                             viewBox="0 0 24 24"
                             strokeWidth={1.5}
                             stroke="currentColor"
-                            className="h-6 w-6 mr-1 text-white hover:text-red-700 group-hover:text-red-700 ease-linear transition-all duration-150"
+                            className="h-6 w-6 mr-1 text-white hover:text-[#5b7ea4] group-hover:text-[#5b7ea4] ease-linear transition-all duration-150"
                           >
                             <path
                               strokeLinecap="round"
@@ -217,7 +343,7 @@ function MoviePopUp(props) {
                         <>
                           {props.from === "WatchedMovies" ? (
                             <button
-                              className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-red-700 outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
+                              className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
                               type="button"
                               onClick={() => removeFromWatchedMovies(PopupInfo)}
                             >
@@ -227,7 +353,7 @@ function MoviePopUp(props) {
                                 viewBox="0 0 24 24"
                                 strokeWidth={1.5}
                                 stroke="currentColor"
-                                className="h-6 w-6 mr-1 text-white hover:text-red-700 group-hover:text-red-700 ease-linear transition-all duration-150"
+                                className="h-6 w-6 mr-1 text-white hover:text-[#5b7ea4] group-hover:text-[#5b7ea4] ease-linear transition-all duration-150"
                               >
                                 <path
                                   strokeLinecap="round"
@@ -239,13 +365,13 @@ function MoviePopUp(props) {
                             </button>
                           ) : (
                             <button
-                              className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-red-700 outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
+                              className="group flex items-center justify-center border-[0.7px] border-white text-white font-medium sm:font-bold text-xs px-4 mr-4 sm:px-6 md:text-sm  py-3 rounded shadow hover:shadow-lg hover:bg-white hover:text-[#5b7ea4] outline-none focus:outline-none mb-1 ease-linear transition-all duration-150"
                               type="button"
                               onClick={() => addToMyList(PopupInfo)}
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className="h-6 w-6 mr-1 text-white hover:text-red-700 group-hover:text-red-700 ease-linear transition-all duration-150"
+                                className="h-6 w-6 mr-1 text-white hover:text-[#5b7ea4] group-hover:text-[#5b7ea4] ease-linear transition-all duration-150"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -290,7 +416,6 @@ function MoviePopUp(props) {
               </Fade>
             </div>
           </div>
-          <div className="opacity-40 fixed inset-0 z-40 bg-black"></div>
         </>
       )}
     </>

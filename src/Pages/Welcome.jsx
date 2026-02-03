@@ -64,92 +64,14 @@ function Welcome() {
       </div>
 
       {/* Section 2 */}
-      <section className="bg-black border-y-8 border-y-zinc-800">
-        <Fade>
-          <div className="flex justify-center md:py-8">
-            <div className="lg:flex lg:items-center lg:w-9/12">
-              <div>
-                <h1 className="mt-2 mb-6 text-4xl font-semibold text-center text-white lg:mt-0 lg:text-left lg:ml-8 lg:text-5xl xl:text-6xl">
-                  Enjoy on your TV.
-                </h1>
-                <h1 className="m-4 text-center text-stone-400 font-light lg:text-left lg:ml-8 lg:text-2xl lg:w-9/12">
-                  Watch on smart TVs, PlayStation, Xbox, Chromecast, Apple TV,
-                  Blu-ray players and more.
-                </h1>
-              </div>
-              <div className="flex justify-center">
-                <img className="" src={WelcomePageImage1} />
-              </div>
-            </div>
-          </div>
-        </Fade>
-      </section>
+
 
       {/* Section 3 */}
-      <section className="bg-black">
-        <Fade>
-          <div className="flex justify-center">
-            <div className="flex flex-col-reverse lg:flex-row lg:items-center lg:w-9/12">
-              <div className="flex justify-center">
-                <img className="" src={WelcomePageImage2} />
-              </div>
-              <div>
-                <h1 className="mx-4 mt-4 mb-6 text-4xl font-semibold text-center text-white lg:mt-0 lg:text-left lg:ml-8 lg:text-5xl xl:text-6xl">
-                  Download your shows to watch offline.
-                </h1>
-                <h1 className="m-4 text-center text-stone-400 font-light lg:text-left lg:ml-8 lg:text-2xl lg:w-9/12">
-                  Save your favourites easily and always have something to
-                  watch.
-                </h1>
-              </div>
-            </div>
-          </div>
-        </Fade>
-      </section>
-
       {/* Section 4 */}
-      <section className="bg-black border-y-8 border-y-zinc-800">
-        <Fade>
-          <div className="flex justify-center md:py-8">
-            <div className="lg:flex lg:items-center lg:w-9/12">
-              <div>
-                <h1 className="mt-4 mb-6 text-4xl font-semibold text-center text-white lg:mt-0 lg:text-left lg:ml-8 lg:text-5xl xl:text-6xl">
-                  Watch everywhere.
-                </h1>
-                <h1 className="m-4 text-center text-stone-400 font-light lg:text-left lg:ml-8 lg:text-2xl lg:w-9/12">
-                  Stream unlimited movies and TV shows on your phone, tablet,
-                  laptop, and TV.
-                </h1>
-              </div>
-              <div className="flex justify-center">
-                <img className="" src={WelcomePageImage3} />
-              </div>
-            </div>
-          </div>
-        </Fade>
-      </section>
+
 
       {/* Section 5 */}
-      <section className="bg-black">
-        <Fade>
-          <div className="flex justify-center">
-            <div className="flex flex-col-reverse lg:flex-row lg:items-center lg:w-9/12">
-              <div className="flex justify-center">
-                <img className="" src={WelcomePageImage4} />
-              </div>
-              <div>
-                <h1 className="mt-4 mb-6 text-4xl font-semibold text-center text-white lg:mt-0 lg:text-left lg:ml-8 lg:text-5xl xl:text-6xl">
-                  Create profiles for children.
-                </h1>
-                <h1 className="m-4 text-center text-stone-400 font-light lg:text-left lg:ml-8 lg:text-2xl lg:w-9/12">
-                  Send children on adventures with their favourite characters in
-                  a space made just for them—free with your membership.
-                </h1>
-              </div>
-            </div>
-          </div>
-        </Fade>
-      </section>
+
 
       {/* Section 6 */}
       <section></section>

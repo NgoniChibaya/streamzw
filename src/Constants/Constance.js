@@ -1,8 +1,10 @@
-export const baseUrl = "https://4rjiw4gegqgk3ceysdwzzvvdga0fnwxl.lambda-url.af-south-1.on.aws/api";
-export const DJANGO_API_URL = "https://4rjiw4gegqgk3ceysdwzzvvdga0fnwxl.lambda-url.af-south-1.on.aws/api";
+export const baseUrl = "https://streamzw.com/api";
+export const DJANGO_API_URL = "https://streamzw.com/api";
 export const API_KEY = "ecb37597e45cfeed0586f3cd57233d0b";
 export const imageUrl = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
 export const imageUrl2 = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
+export const baseUrl1 = "http://localhost:8000/api";
+export const DJANGO_API_URL1 = "http://localhost:8000/api";
 
 export const genresList = [
   {

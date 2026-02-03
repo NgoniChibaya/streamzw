@@ -25,37 +25,9 @@ function SignIn() {
   const [password, setPassword] = useState("");
   const [ErrorMessage, setErrorMessage] = useState("");
   const [loader, setLoader] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRendered = React.useRef(false);
-
-  React.useEffect(() => {
-    window.onCaptchaSuccess = (token) => {
-      setCaptchaToken(token);
-    };
-    
-    // Render reCAPTCHA only once
-    if (window.grecaptcha && !captchaRendered.current) {
-      const interval = setInterval(() => {
-        if (window.grecaptcha.render && document.getElementById('recaptcha-signin')) {
-          window.grecaptcha.render('recaptcha-signin', {
-            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
-            'callback': (token) => setCaptchaToken(token)
-          });
-          captchaRendered.current = true;
-          clearInterval(interval);
-        }
-      }, 100);
-    }
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!captchaToken) {
-      setErrorMessage("Please complete the captcha");
-      return;
-    }
-    
     setLoader(true);
 
     const auth = getAuth();
@@ -66,7 +38,7 @@ function SignIn() {
       
       if (user != null) {
         const djangoRegisterResponse = await instance.post(
-          "/firebase-login",
+          "/firebase-login/",
           {
             id_token: user.uid,
             email: user.email,
@@ -135,7 +107,7 @@ function SignIn() {
 
       if (user != null) {
         const djangoRegisterResponse = await instance.post(
-          "/firebase-register",
+          "/firebase-register/",
           {
             id_token: user.uid,
             email: user.email,
@@ -219,7 +191,6 @@ function SignIn() {
                       onChange={(e) => setPassword(e.target.value)}
                     ></input>
                   </div>
-                  <div id="recaptcha-signin"></div>
                   <div>
                     {ErrorMessage && (
                       <h1 className="flex text-white font-bold p-4 bg-transparent border border-stone-700 rounded text-center">
@@ -261,6 +232,12 @@ function SignIn() {
                         </label>
                       </div>
                     </div>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-[#5b7ea4] hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
                   <button
                     type="submit"
@@ -284,7 +261,7 @@ function SignIn() {
                     } transition ease-in-out font-medium rounded-sm text-sm px-5 py-2.5 text-center`}
                   >
                     {loader ? (
-                      <ClipLoader color="#ff0000" />
+                      <ClipLoader color="#5b7ea4" />
                     ) : (
                       <>
                         <span

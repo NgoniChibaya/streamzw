@@ -32,7 +32,7 @@ function ContactChat() {
   const fetchMessages = async () => {
     try {
       const token = localStorage.getItem('django_token');
-      const response = await instance.get('/contact/messages', {
+      const response = await instance.post('/contact/messages/', {
         headers: {
           'Authorization': `Token ${token}`,
         }
