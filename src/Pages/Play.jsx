@@ -136,7 +136,15 @@ const checkProgress = async () => {
     axios
       .get(`${DJANGO_API_URL}/movies/${id}/video/`)
       .then((response) => {
-        const { video_url, cookies } = response.data;
+        console.log('API Response:', response.data);
+        
+        const { video_url, cookies } = response.data || {};
+        
+        if (!video_url) {
+          console.error('No video_url in response');
+          setVideoError(true);
+          return;
+        }
         
         // Set CloudFront cookies
         if (cookies) {
@@ -182,7 +190,13 @@ const checkProgress = async () => {
             hls.on(Hls.Events.ERROR, (event, data) => {
               console.error('HLS Error:', data);
               if (data.fatal) {
-                setVideoError(true);
+                console.error('Fatal HLS error, trying fallback');
+                // Try direct video element as fallback
+                if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+                  videoRef.current.src = video_url;
+                } else {
+                  setVideoError(true);
+                }
               }
             });
           } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {

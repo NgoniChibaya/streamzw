@@ -344,7 +344,7 @@ function RowPost(props) {
                     <>
                       <img
                         className="rounded-sm"
-                        src={`${imageUrl + obj.poster_path}`}
+                        src={`${imageUrl}${obj.poster_path}`}
                       />
                     </>
                   ) : (
@@ -358,7 +358,7 @@ function RowPost(props) {
                         }
                         src={
                           obj.backdrop_path
-                            ? `${imageUrl2 + obj.backdrop_path}`
+                            ? `${imageUrl2}${obj.backdrop_path}`
                             : "https://i.ytimg.com/vi/Mwf--eGs05U/maxresdefault.jpg"
                         }
                         onClick={() => handleMoviePopup(obj)}
@@ -498,20 +498,22 @@ function RowPost(props) {
                       </h1>
 
                       <div className="ml-4">
-                        <StarRatings
-                          rating={obj.vote_average / 2}
-                          starRatedColor="#5b7ea4"
-                          numberOfStars={5}
-                          name="rating"
-                          starDimension="0.8rem"
-                          starSpacing="0.2rem"
-                        />
+                        {obj.vote_average && (
+                          <StarRatings
+                            rating={obj.vote_average / 2}
+                            starRatedColor="#5b7ea4"
+                            numberOfStars={5}
+                            name="rating"
+                            starDimension="0.8rem"
+                            starSpacing="0.2rem"
+                          />
+                        )}
                       </div>
 
                       {converted &&
-                        converted.map((genre) => {
+                        converted.map((genre, index) => {
                           return (
-                            <span className="hidden text-white ml-4 font-thin text-xs lg:inline">
+                            <span key={index} className="hidden text-white ml-4 font-thin text-xs lg:inline">
                               {genre}
                             </span>
                           );
