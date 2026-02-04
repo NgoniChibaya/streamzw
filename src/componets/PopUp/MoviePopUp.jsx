@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Fade } from "react-reveal";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 import { imageUrl } from "../../Constants/Constance";
 import { PopUpContext } from "../../Context/moviePopUpContext";
 import useUpdateMylist from "../../CustomHooks/useUpdateMylist";
@@ -273,13 +273,12 @@ function MoviePopUp(props) {
                              typeof PopupInfo.vote_average === 'number' && 
                              !isNaN(PopupInfo.vote_average) &&
                              PopupInfo.vote_average > 0 && (
-                              <StarRatings
-                                rating={Math.max(0, Math.min(5, PopupInfo.vote_average / 2))}
-                                starRatedColor="#5b7ea4"
-                                starEmptyColor="rgba(91, 126, 164, 0.3)"
-                                numberOfStars={5}
-                                starDimension="16px"
-                                starSpacing="2px"
+                              <Rating
+                                initialValue={Math.max(0, Math.min(5, PopupInfo.vote_average / 2))}
+                                size={16}
+                                fillColor="#5b7ea4"
+                                emptyColor="rgba(91, 126, 164, 0.3)"
+                                readonly
                               />
                             )}
                             {(!PopupInfo.vote_average || 

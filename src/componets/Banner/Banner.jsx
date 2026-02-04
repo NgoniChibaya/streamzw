@@ -3,7 +3,7 @@ import { API_KEY, imageUrl } from "../../Constants/Constance";
 import axios from "../../axios";
 import { PopUpContext } from "../../Context/moviePopUpContext";
 import { Fade } from "react-reveal";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 import MoviePopUp from "../PopUp/MoviePopUp";
 import usePlayMovie from "../../CustomHooks/usePlayMovie";
 import instance from "../../axios";
@@ -92,13 +92,12 @@ function Banner(props) {
                 {movie.vote_average ? (
                   <h1 className="flex text-white text-xl drop-shadow-lg 2xl:text-lg">
                     <div className="-mt-1">
-                      <StarRatings
-                        rating={movie.vote_average / 2}
-                        starRatedColor="#5b7ea4"
-                        numberOfStars={5}
-                        name="rating"
-                        starDimension="1.1rem"
-                        starSpacing="0.2rem"
+                      <Rating
+                        initialValue={movie.vote_average / 2}
+                        size={18}
+                        fillColor="#5b7ea4"
+                        emptyColor="#374151"
+                        readonly
                       />
                     </div>
                   </h1>

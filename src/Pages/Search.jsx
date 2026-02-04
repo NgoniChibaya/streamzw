@@ -8,7 +8,7 @@ import MoviePopUp from "../componets/PopUp/MoviePopUp";
 import usePlayMovie from "../CustomHooks/usePlayMovie";
 import useUpdateLikedMovies from "../CustomHooks/useUpdateLikedMovies";
 import useGenereConverter from "../CustomHooks/useGenereConverter";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 
 function Search() {
   const { showModal, setShowModal } = useContext(PopUpContext);
@@ -64,13 +64,13 @@ function Search() {
             onChange={handleInputChange}
             value={searchQuery}
             type="text"
-            class="w-full bg-stone-700 text-white outline-none sm:text-sm rounded focus:ring-primary-600 focus:border-primary-600 block p-2.5 placeholder:text-white"
+            className="w-full bg-stone-700 text-white outline-none sm:text-sm rounded focus:ring-primary-600 focus:border-primary-600 block p-2.5 placeholder:text-white"
             placeholder="Search for Movie name"
             required=""
-          ></input>
+          />
           <button
             type="submit"
-            class="flex items-center px-8 text-white bg-[#5b7ea4] hover:bg-[#4a6a8f] -ml-2 focus:outline-none focus:ring-primary-300 transition ease-in-out font-medium rounded text-sm py-1 text-center"
+            className="flex items-center px-8 text-white bg-[#5b7ea4] hover:bg-[#4a6a8f] -ml-2 focus:outline-none focus:ring-primary-300 transition ease-in-out font-medium rounded text-sm py-1 text-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -98,9 +98,9 @@ function Search() {
             const converted = convertGenere(movie.genre_ids);
             return (
               <div className="p-1 mt-2 mb-5">
-                <div class="hover:scale-105 hover:border-2 group relative block overflow-hidden rounded-sm transition-all duration-500">
+                <div className="hover:scale-105 hover:border-2 group relative block overflow-hidden rounded-sm transition-all duration-500">
                   <a
-                    class="lightbox transition-all duration-500 group-hover:scale-105 tobii-zoom"
+                    className="lightbox transition-all duration-500 group-hover:scale-105 tobii-zoom"
                     title=""
                   >
                     <img
@@ -118,7 +118,7 @@ function Search() {
                       background:
                         "linear-gradient(0deg, hsl(0deg 0% 4% / 92%) 0%, hsl(0deg 0% 0% / 50%) 35%, hsl(220deg 26% 44% / 0%) 100%)",
                     }}
-                    class="hidden xl:block absolute -bottom-52 group-hover:bottom-0 w-full transition-all duration-500 p-4 rounded"
+                    className="hidden xl:block absolute -bottom-52 group-hover:bottom-0 w-full transition-all duration-500 p-4 rounded"
                   >
                     <div className="flex mb-1 transition ease-in-out delay-150">
                       {/* Play Button */}
@@ -203,17 +203,17 @@ function Search() {
                       </div>
                     </div>
 
-                    <a class="hover:text-primary-600 text-shadow-xl shadow-red-700 text-white text-base 2xl:text-2xl transition duration-500 font-medium">
+                    <a className="hover:text-primary-600 text-shadow-xl shadow-red-700 text-white text-base 2xl:text-2xl transition duration-500 font-medium">
                       {movie.name || movie.title}
                     </a>
 
                     <br></br>
-                    <StarRatings
-                      rating={movie.vote_average / 2}
-                      starRatedColor="#5b7ea4"
-                      numberOfStars={5}
-                      name="rating"
-                      starDimension="1.2rem"
+                    <Rating
+                      initialValue={movie.vote_average / 2}
+                      size={20}
+                      fillColor="#5b7ea4"
+                      emptyColor="#374151"
+                      readonly
                     />
                     <br></br>
                     <div className="mt-1">

@@ -13,7 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { AuthContext } from "../../Context/UserContext";
 import { PopUpContext } from "../../Context/moviePopUpContext";
 import axios from "../../axios";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 import { ClipLoader } from "react-spinners";
 
 function UserMovieSection(props) {
@@ -95,7 +95,7 @@ function UserMovieSection(props) {
               return (
                 <div className="p-1 mt-2 mb-5">
                   <div 
-                     class="hover:border-2 hover:scale-105 group relative block overflow-hidden rounded-sm transition-all duration-500"
+                     className="hover:border-2 hover:scale-105 group relative block overflow-hidden rounded-sm transition-all duration-500"
                      onClick={() => handleMoviePopup(movie)}
                   >
     
@@ -110,7 +110,7 @@ function UserMovieSection(props) {
                         background:
                           "linear-gradient(0deg, hsl(0deg 0% 4% / 92%) 0%, hsl(0deg 0% 0% / 50%) 35%, hsl(220deg 26% 44% / 0%) 100%)",
                       }}
-                      class="hidden xl:block absolute -bottom-52 group-hover:bottom-0 w-full transition-all duration-500 p-4 rounded"
+                      className="hidden xl:block absolute -bottom-52 group-hover:bottom-0 w-full transition-all duration-500 p-4 rounded"
                     >
                       <div className="flex mb-1 transition ease-in-out delay-150">
                         {/* Play Button */}
@@ -246,17 +246,17 @@ function UserMovieSection(props) {
                         </div>
                       </div>
 
-                      <a class="hover:text-primary-600 text-shadow-xl shadow-red-700 text-white text-base 2xl:text-2xl transition duration-500 font-medium">
+                      <a className="hover:text-primary-600 text-shadow-xl shadow-red-700 text-white text-base 2xl:text-2xl transition duration-500 font-medium">
                         {movie.name || movie.title}
                       </a>
 
                       <br></br>
-                      <StarRatings
-                        rating={movie.vote_average / 2}
-                        starRatedColor="#5b7ea4"
-                        numberOfStars={5}
-                        name="rating"
-                        starDimension="1.2rem"
+                      <Rating
+                        initialValue={movie.vote_average / 2}
+                        size={20}
+                        fillColor="#5b7ea4"
+                        emptyColor="#374151"
+                        readonly
                       />
                       <br></br>
                       <div className="mt-1">

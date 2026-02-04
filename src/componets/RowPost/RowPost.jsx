@@ -6,7 +6,7 @@ import { imageUrl, imageUrl2, API_KEY } from "../../Constants/Constance";
 import useUpdateMylist from "../../CustomHooks/useUpdateMylist";
 import { Fade } from "react-reveal";
 import YouTube from "react-youtube";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 import { PaystackButton } from 'react-paystack';
 
 import usePlayMovie from "../../CustomHooks/usePlayMovie";
@@ -499,13 +499,12 @@ function RowPost(props) {
 
                       <div className="ml-4">
                         {obj.vote_average && (
-                          <StarRatings
-                            rating={obj.vote_average / 2}
-                            starRatedColor="#5b7ea4"
-                            numberOfStars={5}
-                            name="rating"
-                            starDimension="0.8rem"
-                            starSpacing="0.2rem"
+                          <Rating
+                            initialValue={obj.vote_average / 2}
+                            size={16}
+                            fillColor="#5b7ea4"
+                            emptyColor="#374151"
+                            readonly
                           />
                         )}
                       </div>
@@ -613,13 +612,12 @@ function RowPost(props) {
                     <div className="px-6 py-4 bg-black/20 space-y-1">
                         <div className="flex items-center text-xs sm:text-sm">
                           <span className="text-neutral-500 w-24">Rating:</span>
-                          <StarRatings
-                            rating={moviePopupInfo.vote_average / 2}
-                            starRatedColor="#5b7ea4"
-                            numberOfStars={5}
-                            name="rating"
-                            starDimension="14px"
-                            starSpacing="2px"
+                          <Rating
+                            initialValue={moviePopupInfo.vote_average / 2}
+                            size={14}
+                            fillColor="#5b7ea4"
+                            emptyColor="#374151"
+                            readonly
                           />
                         </div>
                         <div className="flex items-center text-xs sm:text-sm">

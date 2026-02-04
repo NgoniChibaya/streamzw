@@ -1,4 +1,4 @@
-import { getAllMovies, deleteMovie, getStorageUsage } from './indexedDbService';
+import { getAllMovies, deleteMovie, getStorageUsage, getMovieSegments } from './indexedDbService';
 
 const MAX_STORAGE_MB = 5000; // 5GB
 const EXPIRY_DAYS = 30;
@@ -9,7 +9,7 @@ const EXPIRY_DAYS = 30;
 export const cleanupOldDownloads = async () => {
   try {
     const usage = await getStorageUsage();
-    const usedMB = parseFloat(usage.totalMB);
+    let usedMB = parseFloat(usage.totalMB);
     const threshold = MAX_STORAGE_MB * 0.9; // 90% threshold
 
     if (usedMB > threshold) {
@@ -27,7 +27,8 @@ export const cleanupOldDownloads = async () => {
         await deleteMovie(movie.id);
         const segments = movie.title ? 
           await getMovieSegments(movie.id) : [];
-        const movieSizeMB = (segments.reduce((sum, seg) => sum + seg.size, 0)) / (1024 * 1024);
+        const movieSizeMB = segments && segments.length > 0 ? 
+          (segments.reduce((sum, seg) => sum + (seg.size || 0), 0)) / (1024 * 1024) : 0;
         usedMB -= movieSizeMB;
         
         console.log(`Deleted old download: ${movie.title} (${movieSizeMB.toFixed(2)}MB)`);

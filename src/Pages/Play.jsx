@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import StarRatings from "react-star-ratings";
+import { Rating } from 'react-simple-star-rating';
 import axios from "../axios";
 import { API_KEY, imageUrl, imageUrl2, DJANGO_API_URL } from "../Constants/Constance";
 import { getDoc, doc } from "firebase/firestore";
@@ -577,13 +577,12 @@ const checkProgress = async () => {
               <h1 className="text-white font-bold text-3xl mb-2">
                 {movieDetails.original_title || movieDetails.title}
               </h1>
-              <StarRatings
-                rating={movieDetails.vote_average / 2}
-                starRatedColor="#5b7ea4"
-                numberOfStars={5}
-                name="rating"
-                starDimension="1rem"
-                starSpacing="0.2rem"
+              <Rating
+                initialValue={movieDetails.vote_average / 2}
+                size={16}
+                fillColor="#5b7ea4"
+                emptyColor="#374151"
+                readonly
               />
               <p className="text-neutral-400 mt-3">{movieDetails.overview}</p>
               <div className="bg-neutral-600 w-full h-[0.1rem] my-5"></div>
