@@ -142,12 +142,14 @@ const checkProgress = async () => {
         
         if (!video_url) {
           console.error('No video_url in response');
+          console.error('Full response data:', response.data);
           setVideoError(true);
           return;
         }
         
         // Set CloudFront cookies
         if (cookies) {
+          console.log('Setting cookies for CloudFront:', cookies);
           Object.keys(cookies).forEach(key => {
             document.cookie = `${key}=${cookies[key]}; path=/; domain=.cloudfront.net`;
           });
