@@ -13,7 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { AuthContext } from "../../Context/UserContext";
 import { PopUpContext } from "../../Context/moviePopUpContext";
 import axios from "../../axios";
-import { Rating } from 'react-simple-star-rating';
+import ReactStars from 'react-rating-stars-component';
 import { ClipLoader } from "react-spinners";
 
 function UserMovieSection(props) {
@@ -251,12 +251,13 @@ function UserMovieSection(props) {
                       </a>
 
                       <br></br>
-                      <Rating
-                        initialValue={movie.vote_average / 2}
+                      <ReactStars
+                        count={5}
+                        value={movie.vote_average / 2}
                         size={20}
-                        fillColor="#5b7ea4"
-                        emptyColor="#374151"
-                        readonly
+                        activeColor="#5b7ea4"
+                        color="#374151"
+                        edit={false}
                       />
                       <br></br>
                       <div className="mt-1">

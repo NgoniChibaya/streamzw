@@ -6,7 +6,7 @@ import { imageUrl, imageUrl2, API_KEY } from "../../Constants/Constance";
 import useUpdateMylist from "../../CustomHooks/useUpdateMylist";
 import { Fade } from "react-reveal";
 import YouTube from "react-youtube";
-import { Rating } from 'react-simple-star-rating';
+import ReactStars from 'react-rating-stars-component';
 import { PaystackButton } from 'react-paystack';
 
 import usePlayMovie from "../../CustomHooks/usePlayMovie";
@@ -499,12 +499,13 @@ function RowPost(props) {
 
                       <div className="ml-4">
                         {obj.vote_average && (
-                          <Rating
-                            initialValue={obj.vote_average / 2}
+                          <ReactStars
+                            count={5}
+                            value={obj.vote_average / 2}
                             size={16}
-                            fillColor="#5b7ea4"
-                            emptyColor="#374151"
-                            readonly
+                            activeColor="#5b7ea4"
+                            color="#374151"
+                            edit={false}
                           />
                         )}
                       </div>
@@ -612,12 +613,13 @@ function RowPost(props) {
                     <div className="px-6 py-4 bg-black/20 space-y-1">
                         <div className="flex items-center text-xs sm:text-sm">
                           <span className="text-neutral-500 w-24">Rating:</span>
-                          <Rating
-                            initialValue={moviePopupInfo.vote_average / 2}
+                          <ReactStars
+                            count={5}
+                            value={moviePopupInfo.vote_average / 2}
                             size={14}
-                            fillColor="#5b7ea4"
-                            emptyColor="#374151"
-                            readonly
+                            activeColor="#5b7ea4"
+                            color="#374151"
+                            edit={false}
                           />
                         </div>
                         <div className="flex items-center text-xs sm:text-sm">
