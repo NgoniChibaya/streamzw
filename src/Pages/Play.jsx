@@ -72,42 +72,29 @@ function Play() {
     schedulePeriodicCleanup();
     checkIfDownloaded(id).then(setIsDownloaded);
     
-    // Fetch video and handle CloudFront Signatures
-    axios.get(`${DJANGO_API_URL}/movies/${id}/video/`)
+    // Fetch video and handle CloudFront Signed Cookies
+    axios.get(`${DJANGO_API_URL}/movies/${id}/video/`, { withCredentials: true })
       .then((response) => {
-        const { video_url, cookies } = response.data || {};
+        const { video_url } = response.data || {};
+        console.log("Fetched video URL:", video_url);
         if (!video_url) { setVideoError(true); return; }
 
-        // Construct the signature string to append to all HLS segments
-        let signatureParams = "";
-        if (cookies) {
-          const params = new URLSearchParams();
-          Object.keys(cookies).forEach(key => params.append(key, cookies[key]));
-          signatureParams = params.toString();
-        }
-
-        const finalVideoUrl = `${video_url}${video_url.includes('?') ? '&' : '?'}${signatureParams}`;
-        setVideoUrl(finalVideoUrl);
+        // Backend should set CloudFront-Policy, CloudFront-Signature, CloudFront-Key-Pair-Id as cookies
+        // Use clean URL without query parameters
+        setVideoUrl(video_url);
         setVideoError(false);
 
         if (videoRef.current) {
           if (Hls.isSupported()) {
             const hls = new Hls({
-              // THIS IS THE CRITICAL FIX
               xhrSetup: function(xhr, url) {
-                xhr.withCredentials = true; // Attempt to send cookies
-                
-                // If the sub-request (segment) doesn't have the signature, append it manually
-                if (signatureParams && !url.includes("CloudFront-Signature")) {
-                    const separator = url.includes("?") ? "&" : "?";
-                    const newUrl = url + separator + signatureParams;
-                    xhr.open('GET', newUrl, true);
-                }
+                // Enable credentials to send CloudFront signed cookies
+                xhr.withCredentials = true;
               }
             });
 
             hlsRef.current = hls;
-            hls.loadSource(finalVideoUrl);
+            hls.loadSource(video_url);
             hls.attachMedia(videoRef.current);
             
             hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
@@ -118,7 +105,7 @@ function Play() {
               if (data.fatal) hls.startLoad(); // Retry on error
             });
           } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-            videoRef.current.src = finalVideoUrl;
+            videoRef.current.src = video_url;
           }
         }
       })
