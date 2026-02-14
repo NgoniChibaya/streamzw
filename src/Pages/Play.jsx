@@ -104,6 +104,7 @@ function Play() {
               setCurrentQuality(levels.length - 1);
               hls.currentLevel = levels.length - 1;
             });
+            //
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
               setCurrentQuality(data.level);
