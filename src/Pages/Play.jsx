@@ -300,90 +300,90 @@ function Play() {
               </div>
             )}
 
-            {/* YouTube-style Top Controls */}
-            <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/50 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Mobile-friendly Top Controls */}
+            <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  {/* Close/Back Button */}
+                <div className="flex items-center gap-2 sm:gap-4 flex-1">
+                  {/* Close/Back Button - Larger for mobile */}
                   <button 
                     onClick={() => {
                       navigate('/');
                       window.location.reload();
                     }}
-                    className="text-white hover:text-gray-300 transition-colors p-2 rounded-full hover:bg-black/50"
+                    className="text-white hover:text-gray-300 transition-colors p-2 sm:p-3 rounded-full hover:bg-black/50 touch-manipulation"
                     title="Go Home"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H14C13.4696 22 12.9609 21.7893 12.5858 21.4142C12.2107 21.0391 12 20.5304 12 20V15H8C7.46957 15 6.96086 15.2107 6.58579 15.5858C6.21071 15.9609 6 16.4696 6 17V20C6 20.5304 5.78929 21.0391 5.41421 21.4142C5.03914 21.7893 4.53043 22 4 22H3C2.73478 22 2.48043 21.8946 2.29289 21.7071C2.10536 21.5196 2 21.2652 2 21V10C2 9.73478 2.10536 9.48043 2.29289 9.29289C2.48043 9.10536 2.73478 9 3 9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                   
-                  {/* Movie Title */}
-                  <h3 className="text-white text-lg font-semibold truncate max-w-md">
+                  {/* Movie Title - Responsive font size */}
+                  <h3 className="text-white text-base sm:text-lg font-semibold truncate max-w-[60vw] sm:max-w-md">
                     {movieDetails.title || 'Loading...'}
                   </h3>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {/* YouTube-style Info */}
-                  <span className="text-sm text-gray-300 bg-black/30 px-2 py-1 rounded">
+                  {/* YouTube-style Info - Mobile optimized */}
+                  <span className="text-xs sm:text-sm text-gray-300 bg-black/30 px-2 py-1 rounded">
                     {currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'HD'} • {formatTime(duration)}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* YouTube-style Bottom Controls */}
-            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              {/* Progress Bar - YouTube Style */}
-              <div className="w-full h-1 bg-gray-600 cursor-pointer mb-4 relative group" onClick={handleSeek}>
+            {/* Mobile-friendly Bottom Controls */}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              {/* Progress Bar - Mobile optimized */}
+              <div className="w-full h-1 sm:h-1.5 bg-gray-600 cursor-pointer mb-3 sm:mb-4 relative group touch-manipulation" onClick={handleSeek}>
                 <div className="h-full bg-[#5b7ea4]" style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} />
-                {/* Hover tooltip */}
-                <div className="absolute bottom-6 left-0 w-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                {/* Touch-friendly hover tooltip */}
+                <div className="absolute -top-8 left-0 w-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   <div className="bg-black text-white text-xs px-2 py-1 rounded absolute" style={{ left: `${duration > 0 ? (currentTime/duration)*100 : 0}%`, transform: 'translateX(-50%)' }}>
                     {formatTime(currentTime)}
                   </div>
                 </div>
               </div>
               
-              {/* Control Buttons - YouTube Style */}
+              {/* Control Buttons - Mobile optimized */}
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  {/* Play/Pause - YouTube Style */}
-                  <button onClick={togglePlay} className="text-2xl hover:text-[#5b7ea4] transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* Play/Pause - Larger touch targets */}
+                  <button onClick={togglePlay} className="text-3xl sm:text-2xl hover:text-[#5b7ea4] transition-colors bg-white/10 hover:bg-white/20 p-2 sm:p-3 rounded-full touch-manipulation">
                     {isPlaying ? (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <rect x="6" y="4" width="4" height="16" rx="1"/>
                         <rect x="14" y="4" width="4" height="16" rx="1"/>
                       </svg>
                     ) : (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <polygon points="5,3 19,12 5,21"/>
                       </svg>
                     )}
                   </button>
                   
-                  {/* Time Display - YouTube Style */}
-                  <div className="text-sm text-white font-medium">
+                  {/* Time Display - Mobile responsive */}
+                  <div className="text-xs sm:text-sm text-white font-medium">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  {/* Volume Control - YouTube Style */}
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* Volume Control - Mobile optimized */}
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <button 
                       onClick={() => setVolume(volume === 0 ? 1 : 0)}
-                      className="text-white hover:text-gray-300 transition-colors"
+                      className="text-white hover:text-gray-300 transition-colors p-1 sm:p-2 touch-manipulation"
                     >
                       {volume === 0 ? (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <path d="M23 9L17 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <path d="M17 9L23 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       ) : (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <path d="M15.54 8.46C16.4774 9.39764 17.004 10.6692 17.004 11.995C17.004 13.3208 16.4774 14.5924 15.54 15.53" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
@@ -396,15 +396,15 @@ function Play() {
                       step="0.1"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-24 accent-[#5b7ea4]"
+                      className="w-16 sm:w-24 accent-[#5b7ea4] touch-manipulation"
                     />
                   </div>
 
-                  {/* Quality Selector - YouTube Style */}
+                  {/* Quality Selector - Mobile optimized */}
                   <div className="relative">
                     <button 
                       onClick={() => setShowQualityMenu(!showQualityMenu)}
-                      className="text-sm text-white hover:text-gray-300 transition-colors bg-white/10 hover:bg-white/20 px-3 py-1 rounded"
+                      className="text-xs sm:text-sm text-white hover:text-gray-300 transition-colors bg-white/10 hover:bg-white/20 px-2 sm:px-3 py-1 rounded touch-manipulation"
                     >
                       {currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'HD'} ▼
                     </button>
@@ -414,7 +414,7 @@ function Play() {
                           <button
                             key={index}
                             onClick={() => selectQuality(index)}
-                            className={`block w-full text-left px-4 py-2 hover:bg-gray-700 text-white ${
+                            className={`block w-full text-left px-3 py-2 hover:bg-gray-700 text-white text-sm ${
                               currentQuality === index ? 'bg-gray-800 text-[#5b7ea4]' : ''
                             }`}
                           >
@@ -425,9 +425,9 @@ function Play() {
                     )}
                   </div>
 
-                  {/* Fullscreen - YouTube Style */}
-                  <button onClick={toggleFullscreen} className="text-white hover:text-gray-300 transition-colors p-2">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Fullscreen - Mobile optimized */}
+                  <button onClick={toggleFullscreen} className="text-white hover:text-gray-300 transition-colors p-1 sm:p-2 touch-manipulation">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M8 3V5M16 3V5M3 8H5M3 16H5M21 8H19M21 16H19M8 19V21M16 19V21M5 12H3M21 12H19M12 5V3M12 21V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
