@@ -52,14 +52,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests - network first, fall back to offline
-  if (url.pathname.includes('/api/') || url.pathname.includes('/movies/')) {
-    event.respondWith(networkFirstStrategy(request));
-    return;
-  }
-
-  // Handle other requests - cache first, fall back to network
-  event.respondWith(cacheFirstStrategy(request));
+  // DEVELOPMENT MODE: Always fetch from network, disable caching
+  // This ensures you always get the latest build during development
+  event.respondWith(
+    fetch(request).catch(() => {
+      // If network fails, return a simple error response
+      return new Response(
+        JSON.stringify({ error: 'Network unavailable' }),
+        { status: 503, statusText: 'Service Unavailable' }
+      );
+    })
+  );
 });
 
 async function networkFirstStrategy(request) {

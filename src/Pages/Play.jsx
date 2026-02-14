@@ -337,7 +337,7 @@ function Play() {
             <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
               {/* Progress Bar - YouTube Style */}
               <div className="w-full h-1 bg-gray-600 cursor-pointer mb-4 relative group" onClick={handleSeek}>
-                <div className="h-full bg-red-600" style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} />
+                <div className="h-full bg-[#5b7ea4]" style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} />
                 {/* Hover tooltip */}
                 <div className="absolute bottom-6 left-0 w-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   <div className="bg-black text-white text-xs px-2 py-1 rounded absolute" style={{ left: `${duration > 0 ? (currentTime/duration)*100 : 0}%`, transform: 'translateX(-50%)' }}>
@@ -350,7 +350,7 @@ function Play() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   {/* Play/Pause - YouTube Style */}
-                  <button onClick={togglePlay} className="text-2xl hover:text-red-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full">
+                  <button onClick={togglePlay} className="text-2xl hover:text-[#5b7ea4] transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full">
                     {isPlaying ? (
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <rect x="6" y="4" width="4" height="16" rx="1"/>
@@ -396,7 +396,7 @@ function Play() {
                       step="0.1"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-24 accent-red-600"
+                      className="w-24 accent-[#5b7ea4]"
                     />
                   </div>
 
@@ -415,7 +415,7 @@ function Play() {
                             key={index}
                             onClick={() => selectQuality(index)}
                             className={`block w-full text-left px-4 py-2 hover:bg-gray-700 text-white ${
-                              currentQuality === index ? 'bg-gray-800 text-red-400' : ''
+                              currentQuality === index ? 'bg-gray-800 text-[#5b7ea4]' : ''
                             }`}
                           >
                             {level.label}
