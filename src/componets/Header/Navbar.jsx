@@ -62,8 +62,8 @@ function Navbar(props) {
         }
       >
         <nav
-          className={`transition duration-500 ease-in-out  ${
-            show && "transition duration-500 ease-in-out bg-black "
+          className={`transition duration-500 ease-in-out text-white ${
+            show ? "bg-black" : "bg-transparent"
           } `}
         >
           <div className="px-4 mx-auto max-w-8xl sm:px-6 lg:px-8">
@@ -76,7 +76,7 @@ function Navbar(props) {
                     alt="NETFLIX"
                   />
                 </div>
-                <div className="hidden md:block">
+              <div className="hidden md:block">
                   <div className="flex items-center ml-10 space-x-4">
                     <Link
                       to={"/"}
@@ -160,15 +160,9 @@ function Navbar(props) {
 
                   <div className="group inline-block relative transition ease-in-out delay-300">
                     <Link to={"/profile"}>
-                      <img
-                        className="h-10 w-10 rounded-full cursor-pointer"
-                        src={
-                          profilePic
-                            ? `${User.photoURL}`
-                            : `https://www.citypng.com/public/uploads/preview/profile-user-round-red-icon-symbol-download-png-11639594337tco5j3n0ix.png`
-                        }
-                        alt="PROFILE"
-                      />
+                      <div className="h-10 w-10 rounded-full cursor-pointer flex items-center justify-center bg-gradient-to-r from-[#5b7ea4] to-[#2c3e50] text-white font-bold text-lg shadow-lg border-2 border-white">
+                        {User?.displayName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                      </div>
                     </Link>
                     <ul className="absolute hidden text-white pt-1 -ml-32 group-hover:block transition ease-in-out delay-150">
                       <li>

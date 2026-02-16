@@ -53,7 +53,7 @@ function Play() {
 
   const { addToMyList, removeFromMyList, PopupMessage } = useUpdateMylist();
   const { addToLikedMovies, removeFromLikedMovies } = useUpdateLikedMovies();
-  const { removeFromWatchedMovies } = useUpdateWatchedMovies();
+  const { addToWatchedMovies, updateWatchProgress, removeFromWatchedMovies } = useUpdateWatchedMovies();
   const { playMovie } = usePlayMovie();
   const { isOnline } = useNetworkStatus();
 
@@ -243,10 +243,35 @@ function Play() {
   const handleVideoEnded = () => {
     setIsPlayingLocal(false);
     // Mark as completed in watched movies
-    if (User) {
-      // This would trigger the useUpdateWatchedMovies hook
+    if (User && movieDetails) {
+      addToWatchedMovies(movieDetails, duration, duration);
     }
   };
+
+  // Save progress periodically while watching
+  useEffect(() => {
+    if (!User || !movieDetails || duration === 0) return;
+
+    const saveProgressInterval = setInterval(() => {
+      if (videoRef.current && !videoRef.current.paused) {
+        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, duration);
+      }
+    }, 5000); // Save every 5 seconds
+
+    return () => clearInterval(saveProgressInterval);
+  }, [User, movieDetails, duration, updateWatchProgress]);
+
+  // Save progress when component unmounts or video ends
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (User && movieDetails && videoRef.current) {
+        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, duration);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [User, movieDetails, duration, updateWatchProgress]);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -303,33 +328,21 @@ function Play() {
 
             {/* Mobile-friendly Top Controls */}
             <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 sm:gap-4 flex-1">
-                  {/* Close/Back Button - Larger for mobile */}
+              <div className="flex justify-end items-center">
+                <div className="flex items-center gap-2">
+                  {/* Cancel Button - Moved to the right side */}
                   <button 
                     onClick={() => {
                       navigate('/');
                       window.location.reload();
                     }}
                     className="text-white hover:text-gray-300 transition-colors p-2 sm:p-3 rounded-full hover:bg-black/50 touch-manipulation"
-                    title="Go Home"
+                    title="Cancel"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H14C13.4696 22 12.9609 21.7893 12.5858 21.4142C12.2107 21.0391 12 20.5304 12 20V15H8C7.46957 15 6.96086 15.2107 6.58579 15.5858C6.21071 15.9609 6 16.4696 6 17V20C6 20.5304 5.78929 21.0391 5.41421 21.4142C5.03914 21.7893 4.53043 22 4 22H3C2.73478 22 2.48043 21.8946 2.29289 21.7071C2.10536 21.5196 2 21.2652 2 21V10C2 9.73478 2.10536 9.48043 2.29289 9.29289C2.48043 9.10536 2.73478 9 3 9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  
-                  {/* Movie Title - Responsive font size */}
-                  <h3 className="text-white text-base sm:text-lg font-semibold truncate max-w-[60vw] sm:max-w-md">
-                    {movieDetails.title || 'Loading...'}
-                  </h3>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {/* YouTube-style Info - Mobile optimized */}
-                  <span className="text-xs sm:text-sm text-gray-300 bg-black/30 px-2 py-1 rounded">
-                    {currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'HD'} • {formatTime(duration)}
-                  </span>
                 </div>
               </div>
             </div>
