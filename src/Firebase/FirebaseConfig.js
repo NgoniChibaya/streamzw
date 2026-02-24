@@ -10,6 +10,7 @@ const firebaseConfig2 = {
   messagingSenderId: "29045190704",
   appId: "1:29045190704:web:a7c74bd778aa5f993c7df5",
   measurementId: "G-9TB7LL3YPM",
+ // authDomain: "firebase.streamzw.com",
 };
 
 const firebaseConfig = {
@@ -19,7 +20,8 @@ const firebaseConfig = {
   storageBucket: "streamzw-d3c38.firebasestorage.app",
   messagingSenderId: "978673522868",
   appId: "1:978673522868:web:d3deb50b50fa4131db9fe1",
-  measurementId: "G-2JWS05LJ9F"
+  measurementId: "G-2JWS05LJ9F",
+//  authDomain: "firebase.streamzw.com",
 };
 
 // Initialize Firebase

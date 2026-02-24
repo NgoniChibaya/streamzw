@@ -1,31 +1,31 @@
 .footer {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 30px 20px;
+  padding: 20px 30px 15px;
   color: #a0a0a0;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .containerFooter {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 20px;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    padding-bottom: 30px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding-bottom: 20px;
   }
 }
 
 /* Social Media Section */
 .socialSection {
   .sectionTitle {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
@@ -39,33 +39,33 @@
   .socialLink {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    gap: 8px;
+    background: linear-gradient(135deg, #1877f2 0%, #4267b2 100%);
     color: white;
-    padding: 12px 20px;
+    padding: 10px 16px;
     border-radius: 50px;
     text-decoration: none;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
-      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      box-shadow: 0 6px 20px rgba(24, 119, 242, 0.5);
+      background: linear-gradient(135deg, #4267b2 0%, #1877f2 100%);
       text-decoration: none;
       color: white;
     }
 
     .icon {
-      width: 24px;
-      height: 24px;
+      width: 16px;
+      height: 16px;
       filter: brightness(0) invert(1);
     }
 
     .iconLabel {
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -75,10 +75,10 @@
 /* Contact Section */
 .contactSection {
   .sectionTitle {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
@@ -89,16 +89,16 @@
     margin: 0;
   }
 
-  .contactItem {
+.contactItem {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
+    gap: 12px;
+    padding: 10px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 
     &:hover {
       background: rgba(255, 255, 255, 0.1);
@@ -134,14 +134,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 30px;
+  padding-top: 15px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 20px;
+  margin-top: 15px;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
+    flex-direction: row;
+    gap: 20px;
+    text-align: left;
   }
 }
 
@@ -149,15 +149,15 @@
   .languageBtn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #ffffff;
-    padding: 8px 16px;
-    border-radius: 25px;
+    padding: 6px 12px;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 
     &:hover {
       background: rgba(79, 172, 254, 0.2);
@@ -166,8 +166,8 @@
     }
 
     .languageIcon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       color: #4facfe;
     }
   }
@@ -175,7 +175,7 @@
 
 .copyright {
   color: #666666;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
 
   span {
@@ -186,47 +186,20 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .footer {
-    font-size: 0.9rem;
-    padding: 30px 20px 15px;
+    font-size: 0.85rem;
+    padding: 20px 15px 12px;
   }
 
   .socialSection,
   .contactSection {
     .sectionTitle {
-      font-size: 1.1rem;
+      font-size: 0.9rem;
     }
   }
 
   .socialLink {
-    padding: 10px 16px;
-    
-    .iconLabel {
-      font-size: 0.8rem;
-    }
-  }
-
-  .contactItem {
-    padding: 12px;
-    
-    .contactLink {
-      font-size: 1rem;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .footer {
-    font-size: 0.85rem;
-    padding: 25px 15px 15px;
-  }
-
-  .containerFooter {
-    gap: 25px;
-  }
-
-  .socialLink {
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 7px 10px;
+    gap: 6px;
     
     .icon {
       width: 20px;
@@ -234,16 +207,49 @@
     }
     
     .iconLabel {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
     }
   }
 
   .contactItem {
-    padding: 10px;
-    gap: 10px;
+    padding: 8px;
     
     .contactLink {
       font-size: 0.9rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    font-size: 0.8rem;
+    padding: 15px 12px 10px;
+  }
+
+  .containerFooter {
+    gap: 15px;
+  }
+
+  .socialLink {
+    padding: 5px 8px;
+    gap: 5px;
+    
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .iconLabel {
+      font-size: 0.65rem;
+    }
+  }
+
+  .contactItem {
+    padding: 6px;
+    gap: 8px;
+    
+    .contactLink {
+      font-size: 0.85rem;
     }
   }
 }

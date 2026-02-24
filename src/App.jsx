@@ -24,12 +24,14 @@ import NavbarWithoutUser from "./componets/Header/NavbarWithoutUser";
 import ContactChat from "./componets/ContactChat/ContactChat";
 
 function App() {
-  const { User, setUser, isPlaying } = useContext(AuthContext);
+  const { User, setUser, isPlaying, authLoading, setAuthLoading } = useContext(AuthContext);
 
   useEffect(() => {
     const auth = getAuth();
+    setAuthLoading(true);
     onAuthStateChanged(auth, (user) => {
       setUser(user);
+      setAuthLoading(false);
       console.log(user);
     });
   }, []);
@@ -39,27 +41,31 @@ function App() {
       {!isPlaying && (User ? <Navbar/> : <NavbarWithoutUser/>)}
       <ContactChat />
       <Suspense replace fallback={<Loading />}>
-        <Routes>
-          <Route index path="/" element={User ? <Home /> : <Welcome />} />
-          {User ? (
-            <>
-              <Route path="/home" element={<Home />} />
-              <Route path="/series" element={<Series />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/mylist" element={<MyList />} />
-              <Route path="/liked" element={<LikedMovies />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/play/:id" element={<Play />} />
-            </>
-          ) : null}
-          <Route path="/play/:id" element={<Play />} />
-
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="*" element={<ErrorPage />} />
-        </Routes>
+        {authLoading ? (
+          <div className="min-h-screen flex items-center justify-center bg-black">
+            <Loading />
+          </div>
+        ) : (
+          <Routes>
+            <Route index path="/" element={User ? <Home /> : <Welcome />} />
+            {User ? (
+              <>
+                <Route path="/home" element={<Home />} />
+                <Route path="/series" element={<Series />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/mylist" element={<MyList />} />
+                <Route path="/liked" element={<LikedMovies />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/play/:id" element={<Play />} />
+              </>
+            ) : null}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="*" element={<ErrorPage />} />
+          </Routes>
+        )}
       </Suspense>
     </div>
   );
