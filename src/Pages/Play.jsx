@@ -55,7 +55,46 @@ function Play() {
   const { addToLikedMovies, removeFromLikedMovies } = useUpdateLikedMovies();
   const { addToWatchedMovies, updateWatchProgress, removeFromWatchedMovies } = useUpdateWatchedMovies();
   const { playMovie } = usePlayMovie();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, networkSpeed } = useNetworkStatus();
+
+  // Auto quality selection based on network speed
+  const getOptimalQualityIndex = (levels, speed) => {
+    if (!levels || levels.length === 0) return -1;
+    
+    // Sort levels by height (resolution) in ascending order
+    const sortedLevels = [...levels].sort((a, b) => a.height - b.height);
+    
+    switch (speed) {
+      case '4g':
+        // For 4G, select the highest quality available
+        return sortedLevels.length - 1;
+      case '3g':
+        // For 3G, select medium quality (around 720p if available)
+        const mediumIndex = sortedLevels.findIndex(level => level.height >= 720);
+        return mediumIndex >= 0 ? mediumIndex : Math.max(0, sortedLevels.length - 2);
+      case '2g':
+        // For 2G, select lowest quality (480p or lower)
+        const lowIndex = sortedLevels.findIndex(level => level.height <= 480);
+        return lowIndex >= 0 ? lowIndex : 0;
+      case 'slow-2g':
+        // For very slow connections, select the lowest quality
+        return 0;
+      default:
+        // Default to highest quality if speed is unknown
+        return sortedLevels.length - 1;
+    }
+  };
+
+  const autoSelectQuality = () => {
+    if (qualityLevels.length > 0 && hlsRef.current) {
+      const optimalIndex = getOptimalQualityIndex(qualityLevels, networkSpeed);
+      if (optimalIndex >= 0 && optimalIndex < qualityLevels.length) {
+        hlsRef.current.currentLevel = optimalIndex;
+        setCurrentQuality(optimalIndex);
+        console.log(`Auto-selected quality: ${qualityLevels[optimalIndex].label} for network speed: ${networkSpeed}`);
+      }
+    }
+  };
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -100,9 +139,27 @@ function Play() {
             hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
               const levels = data.levels.map((l, i) => ({ index: i, height: l.height, label: `${l.height}p`, bitrate: l.bitrate }));
               setQualityLevels(levels);
-              // Set default quality to highest available
-              setCurrentQuality(levels.length - 1);
-              hls.currentLevel = levels.length - 1;
+              console.log("HLS Manifest Parsed - Available qualities:", levels);
+              // Auto-select quality based on network speed
+              autoSelectQuality();
+            });
+
+            // Add more detailed logging for video events
+            hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
+              console.log("Fragment loaded:", {
+                level: data.frag.level,
+                duration: data.frag.duration,
+                bitrate: data.frag.bitrate,
+                networkSpeed: networkSpeed
+              });
+            });
+
+            hls.on(Hls.Events.FRAG_CHANGED, (event, data) => {
+              console.log("Fragment changed:", {
+                level: data.frag.level,
+                duration: data.frag.duration,
+                currentTime: videoRef.current?.currentTime
+              });
             });
             //
 
@@ -142,18 +199,31 @@ function Play() {
 
   // Auto-resume functionality
   const checkSavedProgress = async () => {
-    if (!User) return;
+    if (!User) {
+      console.log("No user logged in, skipping resume check");
+      return;
+    }
     
     try {
+      console.log("Checking saved progress for user:", User.uid, "movie:", id);
       const watchedDoc = await getDoc(doc(db, "WatchedMovies", User.uid));
+      console.log("Watched doc exists:", watchedDoc.exists());
+      
       if (watchedDoc.exists()) {
         const watchedData = watchedDoc.data();
+        console.log("Watched data:", watchedData);
         const movieProgress = watchedData.movies?.find(m => m.id === id);
+        console.log("Movie progress found:", movieProgress);
         
         if (movieProgress && movieProgress.progress > 30 && !movieProgress.completed) {
+          console.log("Setting saved progress to:", movieProgress.progress);
           setSavedProgress(movieProgress.progress);
           setShowContinuePrompt(true);
+        } else {
+          console.log("No valid progress to resume from");
         }
+      } else {
+        console.log("No watched movies document found for user");
       }
     } catch (error) {
       console.error("Error checking saved progress:", error);
@@ -162,8 +232,14 @@ function Play() {
 
   const resumeFromSavedProgress = () => {
     if (videoRef.current && savedProgress > 0) {
+      console.log("Resuming video from saved progress:", savedProgress);
       videoRef.current.currentTime = savedProgress;
       setShowContinuePrompt(false);
+      
+      // Ensure video starts playing from the correct position
+      videoRef.current.play().catch(error => {
+        console.error("Error resuming video playback:", error);
+      });
     }
   };
 
@@ -242,11 +318,56 @@ function Play() {
 
   const handleVideoEnded = () => {
     setIsPlayingLocal(false);
+    console.log("Video playback ended. Duration:", duration, "Current time:", currentTime);
     // Mark as completed in watched movies
     if (User && movieDetails) {
       addToWatchedMovies(movieDetails, duration, duration);
     }
   };
+
+  // Add comprehensive video metrics logging
+  useEffect(() => {
+    const logVideoMetrics = () => {
+      if (videoRef.current && duration > 0) {
+        const metrics = {
+          currentTime: currentTime,
+          duration: duration,
+          progress: duration > 0 ? (currentTime / duration) * 100 : 0,
+          isPlaying: !videoRef.current.paused,
+          volume: videoRef.current.volume,
+          networkSpeed: networkSpeed,
+          currentQuality: currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'Unknown',
+          currentBitrate: currentBitrate,
+          buffered: videoRef.current.buffered.length > 0 ? videoRef.current.buffered.end(0) : 0
+        };
+        
+        console.log("Video Metrics:", metrics);
+      }
+    };
+
+    // Log metrics every 10 seconds
+    const metricsInterval = setInterval(logVideoMetrics, 10000);
+    
+    // Log initial metrics when video loads
+    const handleLoadedMetadata = () => {
+      console.log("Video metadata loaded:", {
+        duration: duration,
+        networkSpeed: networkSpeed,
+        isOnline: isOnline
+      });
+    };
+
+    if (videoRef.current) {
+      videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+    }
+
+    return () => {
+      clearInterval(metricsInterval);
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      }
+    };
+  }, [currentTime, duration, networkSpeed, isOnline, currentQuality, currentBitrate, qualityLevels]);
 
   // Save progress periodically while watching
   useEffect(() => {
@@ -272,6 +393,13 @@ function Play() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [User, movieDetails, duration, updateWatchProgress]);
+
+  // Auto-adjust quality when network speed changes
+  useEffect(() => {
+    if (networkSpeed && qualityLevels.length > 0) {
+      autoSelectQuality();
+    }
+  }, [networkSpeed, qualityLevels]);
 
   return (
     <div className="min-h-screen bg-black text-white">
