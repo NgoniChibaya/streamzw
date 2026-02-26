@@ -105,12 +105,15 @@ function Search() {
                   >
                     <img
                       onClick={() => handleMoviePopup(movie)}
-                      className=""
+                      className="w-full h-auto object-cover"
                       src={
                         movie.backdrop_path
                           ? imageUrl2 + movie.backdrop_path
                           : "https://i.ytimg.com/vi/Mwf--eGs05U/maxresdefault.jpg"
                       }
+                      alt={movie.title || movie.name}
+                      loading="lazy"
+                      decoding="async"
                     />
                   </a>
                   <div

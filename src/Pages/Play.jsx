@@ -112,23 +112,33 @@ function Play() {
     checkIfDownloaded(id).then(setIsDownloaded);
     
     // Fetch video and handle CloudFront Signed Cookies
+    console.log("Attempting to fetch video for movie ID:", id);
     axios.get(`${DJANGO_API_URL}/movies/${id}/video/`, { withCredentials: true })
       .then((response) => {
+        console.log("Video API response:", response);
         const { video_url } = response.data || {};
         console.log("Fetched video URL:", video_url);
-        if (!video_url) { setVideoError(true); return; }
+        
+        if (!video_url) {
+          console.error("No video URL received from API");
+          setVideoError(true); 
+          return; 
+        }
 
         // Backend should set CloudFront-Policy, CloudFront-Signature, CloudFront-Key-Pair-Id as cookies
         // Use clean URL without query parameters
         setVideoUrl(video_url);
         setVideoError(false);
+        console.log("Successfully set video URL, initializing player...");
 
         if (videoRef.current) {
           if (Hls.isSupported()) {
+            console.log("HLS is supported, initializing Hls.js");
             const hls = new Hls({
               xhrSetup: function(xhr, url) {
                 // Enable credentials to send CloudFront signed cookies
                 xhr.withCredentials = true;
+                console.log("XHR setup with credentials for URL:", url);
               }
             });
 
@@ -276,6 +286,13 @@ function Play() {
     }
   };
 
+  // Apply volume to video ref when volume state changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+    }
+  }, [volume]);
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     
@@ -315,6 +332,45 @@ function Play() {
       setShowControls(false);
     }, 3000);
   };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!videoRef.current) return;
+      
+      switch(e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          videoRef.current.currentTime += 10;
+          break;
+        case 'ArrowLeft':
+          videoRef.current.currentTime -= 10;
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setVolume(Math.min(1, volume + 0.1));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setVolume(Math.max(0, volume - 0.1));
+          break;
+        case 'KeyF':
+          toggleFullscreen();
+          break;
+        case 'KeyM':
+          setVolume(volume === 0 ? 1 : 0);
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isPlaying, volume]);
 
   const handleVideoEnded = () => {
     setIsPlayingLocal(false);
@@ -415,37 +471,64 @@ function Play() {
         ) : (
           <div 
             ref={containerRef} 
-            className="relative w-full max-w-5xl aspect-video bg-black group cursor-pointer"
+            className="relative w-full max-w-7xl aspect-video bg-black group cursor-pointer overflow-hidden"
             onMouseMove={handleMouseMove}
+            onMouseLeave={() => !videoRef.current?.paused && setShowControls(false)}
           >
             <video 
               ref={videoRef} 
               autoPlay 
-              className="w-full h-full"
+              className="w-full h-full object-contain"
               onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
               onLoadedMetadata={(e) => setDuration(e.target.duration)}
               onEnded={handleVideoEnded}
               onClick={togglePlay}
             />
             
-            {/* Continue Watching Prompt */}
+            {/* Center Play/Pause Icon */}
+            {!isPlaying && (
+              <div className="absolute inset-0 flex items-center justify-center z-30">
+                <button 
+                  onClick={togglePlay}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-full transition-all duration-200 transform hover:scale-110"
+                >
+                  <svg width="60" height="60" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="5,3 19,12 5,21"/>
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {/* Continue Watching Prompt - Enhanced */}
             {showContinuePrompt && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white text-black p-6 rounded-lg text-center">
-                  <h3 className="text-xl font-bold mb-2">Continue Watching?</h3>
-                  <p className="text-gray-600 mb-4">
-                    Resume from {formatTime(savedProgress)}
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 flex-col gap-6">
+                <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 p-8 rounded-2xl text-center max-w-sm mx-4 shadow-2xl">
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-2 text-white">Continue Watching?</h3>
+                  <p className="text-gray-300 mb-1">
+                    You left off at <span className="text-[#5b7ea4] font-bold">{formatTime(savedProgress)}</span>
                   </p>
-                  <div className="flex gap-4 justify-center">
+                  <p className="text-gray-400 text-sm mb-6">
+                    {movieDetails.title || 'This video'}
+                  </p>
+                  <div className="w-full bg-gray-700 h-1 rounded-full mb-6 overflow-hidden">
+                    <div 
+                      className="h-full bg-[#5b7ea4] transition-all"
+                      style={{ width: `${(savedProgress / duration) * 100}%` }}
+                    />
+                  </div>
+                  <div className="flex gap-3 flex-col sm:flex-row justify-center">
                     <button 
                       onClick={resumeFromSavedProgress}
-                      className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
+                      className="bg-[#5b7ea4] hover:bg-[#4a6a8f] text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 order-2 sm:order-1"
                     >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="5,3 19,12 5,21"/>
+                      </svg>
                       Resume
                     </button>
                     <button 
                       onClick={startFromBeginning}
-                      className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+                      className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 order-1 sm:order-2"
                     >
                       Start Over
                     </button>
@@ -454,125 +537,204 @@ function Play() {
               </div>
             )}
 
-            {/* Mobile-friendly Top Controls */}
-            <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="flex justify-end items-center">
-                <div className="flex items-center gap-2">
-                  {/* Cancel Button - Moved to the right side */}
+            {/* Top Controls - Header Bar */}
+            <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="flex justify-between items-start max-w-7xl mx-auto">
+                <div className="flex items-center gap-3">
                   <button 
                     onClick={() => {
+                      if (hlsRef.current) hlsRef.current.destroy();
                       navigate('/');
-                      window.location.reload();
                     }}
-                    className="text-white hover:text-gray-300 transition-colors p-2 sm:p-3 rounded-full hover:bg-black/50 touch-manipulation"
-                    title="Cancel"
+                    className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
+                    title="Back (ESC)"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
+                  <h2 className="text-base sm:text-lg font-bold text-white hidden sm:block line-clamp-1">
+                    {movieDetails.title || 'Now Playing'}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm text-white/70 bg-black/40 px-2 py-1 rounded">
+                    {isOnline ? '🟢 Online' : '🔴 Offline'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Mobile-friendly Bottom Controls */}
-            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              {/* Progress Bar - Mobile optimized */}
-              <div className="w-full h-1 sm:h-1.5 bg-gray-600 cursor-pointer mb-3 sm:mb-4 relative group touch-manipulation" onClick={handleSeek}>
-                <div className="h-full bg-[#5b7ea4]" style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} />
-                {/* Touch-friendly hover tooltip */}
-                <div className="absolute -top-8 left-0 w-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="bg-black text-white text-xs px-2 py-1 rounded absolute" style={{ left: `${duration > 0 ? (currentTime/duration)*100 : 0}%`, transform: 'translateX(-50%)' }}>
-                    {formatTime(currentTime)}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Control Buttons - Mobile optimized */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  {/* Play/Pause - Larger touch targets */}
-                  <button onClick={togglePlay} className="text-3xl sm:text-2xl hover:text-[#5b7ea4] transition-colors bg-white/10 hover:bg-white/20 p-2 sm:p-3 rounded-full touch-manipulation">
-                    {isPlaying ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="6" y="4" width="4" height="16" rx="1"/>
-                        <rect x="14" y="4" width="4" height="16" rx="1"/>
-                      </svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <polygon points="5,3 19,12 5,21"/>
-                      </svg>
-                    )}
-                  </button>
+            {/* Bottom Controls - Enhanced */}
+            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="max-w-7xl mx-auto">
+                {/* Progress Bar - Enhanced with buffering */}
+                <div 
+                  className="w-full h-2 sm:h-1 bg-gray-600/50 cursor-pointer mb-4 rounded relative group touch-manipulation hover:h-1.5 transition-all"
+                  onClick={handleSeek}
+                  onMouseMove={handleMouseMove}
+                >
+                  {/* Buffering indicator */}
+                  <div className="h-full bg-gray-500/70 rounded" style={{ width: '100%', opacity: 0.3 }} />
                   
-                  {/* Time Display - Mobile responsive */}
-                  <div className="text-xs sm:text-sm text-white font-medium">
-                    {formatTime(currentTime)} / {formatTime(duration)}
+                  {/* Current progress */}
+                  <div 
+                    className="h-full bg-[#5b7ea4] rounded transition-all"
+                    style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} 
+                  />
+                  
+                  {/* Hover scrubber dot */}
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#5b7ea4] rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2"
+                    style={{ left: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }}
+                  />
+                  
+                  {/* Time tooltip on hover */}
+                  <div className="absolute -top-10 left-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600">
+                      {formatTime(currentTime === 0 ? 0 : currentTime)}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-4">
-                  {/* Volume Control - Mobile optimized */}
-                  <div className="flex items-center gap-1 sm:gap-2">
+                {/* Control Buttons */}
+                <div className="flex justify-between items-center gap-2 sm:gap-4">
+                  {/* Left Controls */}
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Play/Pause */}
                     <button 
-                      onClick={() => setVolume(volume === 0 ? 1 : 0)}
-                      className="text-white hover:text-gray-300 transition-colors p-1 sm:p-2 touch-manipulation"
+                      onClick={togglePlay}
+                      className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-full transform hover:scale-110 duration-200"
+                      title="Play/Pause (Space)"
                     >
-                      {volume === 0 ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M23 9L17 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M17 9L23 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      {isPlaying ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="6" y="4" width="4" height="16" rx="1"/>
+                          <rect x="14" y="4" width="4" height="16" rx="1"/>
                         </svg>
                       ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M15.54 8.46C16.4774 9.39764 17.004 10.6692 17.004 11.995C17.004 13.3208 16.4774 14.5924 15.54 15.53" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <polygon points="5,3 19,12 5,21"/>
                         </svg>
                       )}
                     </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="w-16 sm:w-24 accent-[#5b7ea4] touch-manipulation"
-                    />
-                  </div>
-
-                  {/* Quality Selector - Mobile optimized */}
-                  <div className="relative">
+                    
+                    {/* Skip Backwards */}
                     <button 
-                      onClick={() => setShowQualityMenu(!showQualityMenu)}
-                      className="text-xs sm:text-sm text-white hover:text-gray-300 transition-colors bg-white/10 hover:bg-white/20 px-2 sm:px-3 py-1 rounded touch-manipulation"
+                      onClick={() => videoRef.current && (videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10))}
+                      className="text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
+                      title="Rewind 10s (←)"
                     >
-                      {currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'HD'} ▼
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.28 6.52A9 9 0 112.12 15M9.28 6.52l3 3M9.28 6.52l-3 3M9 12l3-3-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </button>
-                    {showQualityMenu && (
-                      <div className="absolute top-full right-0 bg-black border border-gray-600 rounded mt-1 z-50 min-w-[120px]">
-                        {qualityLevels.map((level, index) => (
-                          <button
-                            key={index}
-                            onClick={() => selectQuality(index)}
-                            className={`block w-full text-left px-3 py-2 hover:bg-gray-700 text-white text-sm ${
-                              currentQuality === index ? 'bg-gray-800 text-[#5b7ea4]' : ''
-                            }`}
-                          >
-                            {level.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+
+                    {/* Skip Forward */}
+                    <button 
+                      onClick={() => videoRef.current && (videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 10))}
+                      className="text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
+                      title="Forward 10s (→)"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14.72 6.52A9 9 0 1121.88 15M14.72 6.52l-3 3m3-3l3 3m-3 6l-3-3 3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    
+                    {/* Time Display */}
+                    <div className="text-xs sm:text-sm text-white/90 font-mono bg-black/40 px-2.5 sm:px-3 py-1.5 rounded whitespace-nowrap ml-1 sm:ml-2">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </div>
                   </div>
 
-                  {/* Fullscreen - Mobile optimized */}
-                  <button onClick={toggleFullscreen} className="text-white hover:text-gray-300 transition-colors p-1 sm:p-2 touch-manipulation">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 3V5M16 3V5M3 8H5M3 16H5M21 8H19M21 16H19M8 19V21M16 19V21M5 12H3M21 12H19M12 5V3M12 21V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+                  {/* Right Controls */}
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Volume Control */}
+                    <div className="flex items-center gap-1 sm:gap-2 bg-black/30 px-2 sm:px-3 py-1.5 rounded-full group">
+                      <button 
+                        onClick={() => setVolume(volume === 0 ? 1 : 0)}
+                        className="text-white/80 hover:text-white transition-colors p-1 transform hover:scale-110 duration-200"
+                        title="Mute (M)"
+                      >
+                        {volume === 0 ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M23 9L17 15M17 9L23 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M15.54 8.46C16.4774 9.39764 17.004 10.6692 17.004 11.995C17.004 13.3208 16.4774 14.5924 15.54 15.53" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-12 sm:w-20 accent-[#5b7ea4] touch-manipulation opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    </div>
+
+                    {/* Quality Selector */}
+                    <div className="relative group">
+                      <button 
+                        onClick={() => setShowQualityMenu(!showQualityMenu)}
+                        className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors bg-black/40 hover:bg-black/60 px-2.5 sm:px-3 py-1.5 rounded font-medium flex items-center gap-1 transform hover:scale-105 duration-200"
+                        title="Change quality"
+                      >
+                        <span>{currentQuality >= 0 ? qualityLevels[currentQuality]?.label : 'Auto'}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {showQualityMenu && qualityLevels.length > 0 && (
+                        <div className="absolute bottom-full right-0 bg-gray-900 border border-gray-700 rounded-lg mt-2 mb-2 z-50 min-w-[140px] shadow-xl">
+                          {qualityLevels.map((level, index) => (
+                            <button
+                              key={index}
+                              onClick={() => selectQuality(index)}
+                              className={`block w-full text-left px-4 py-2.5 hover:bg-[#5b7ea4] hover:bg-opacity-30 text-white text-sm font-medium transition-all first:rounded-t-lg last:rounded-b-lg ${
+                                currentQuality === index ? 'bg-[#5b7ea4] text-white' : ''
+                              }`}
+                            >
+                              {level.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fullscreen */}
+                    <button 
+                      onClick={toggleFullscreen}
+                      className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-full transform hover:scale-110 duration-200"
+                      title="Fullscreen (F)"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 3v5M16 3v5M3 8h5M21 8h-5M8 21v-5M16 21v-5M3 16h5M21 16h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Keyboard Hints - Mobile hidden */}
+                <div className="hidden sm:flex text-xs text-gray-400 mt-3 gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>
+                    <kbd className="bg-gray-800 px-2 py-1 rounded">Space</kbd> Play/Pause
+                  </span>
+                  <span>
+                    <kbd className="bg-gray-800 px-2 py-1 rounded">←/→</kbd> ±10s
+                  </span>
+                  <span>
+                    <kbd className="bg-gray-800 px-2 py-1 rounded">F</kbd> Fullscreen
+                  </span>
+                  <span>
+                    <kbd className="bg-gray-800 px-2 py-1 rounded">M</kbd> Mute
+                  </span>
                 </div>
               </div>
             </div>
@@ -580,21 +742,69 @@ function Play() {
         )}
 
         {movieDetails.title && (
-          <div className="w-full max-w-5xl p-6">
-            <h1 className="text-4xl font-bold">{movieDetails.title}</h1>
-            <p className="text-gray-400 mt-4 max-w-2xl">{movieDetails.overview}</p>
-            
-            <div className="mt-8">
-                <h3 className="text-xl font-bold border-l-4 border-blue-500 pl-2 mb-4">Similar Content</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="w-full max-w-7xl mx-auto p-4 sm:p-8 text-white">
+            <div className="mb-8">
+              <h1 className="text-3xl sm:text-5xl font-bold mb-3 line-clamp-2">{movieDetails.title}</h1>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
+                {movieDetails.release_date && (
+                  <span className="text-sm sm:text-base text-gray-400">{movieDetails.release_date.split('-')[0]}</span>
+                )}
+                {movieDetails.vote_average && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#5b7ea4] font-bold">{movieDetails.vote_average.toFixed(1)}</span>
+                    <ReactStars
+                      count={5}
+                      value={movieDetails.vote_average / 2}
+                      size={18}
+                      activeColor="#5b7ea4"
+                      color="#374151"
+                      edit={false}
+                    />
+                  </div>
+                )}
+                <span className="text-xs sm:text-sm bg-gray-700 px-2 py-1 rounded">HD</span>
+              </div>
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-3xl">
+                {movieDetails.overview}
+              </p>
+            </div>
+
+            {/* Similar Content */}
+            {similarMovies.length > 0 && (
+              <div className="mt-12">
+                <h3 className="text-xl sm:text-2xl font-bold border-l-4 border-[#5b7ea4] pl-4 mb-6">Similar Content</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {similarMovies.map(m => (
-                        <div key={m.id} className="cursor-pointer hover:scale-105 transition" onClick={() => navigate(`/play/${m.id}`)}>
-                            <img src={imageUrl2 + m.backdrop_path} className="rounded" alt={m.title} />
-                            <p className="text-sm mt-2">{m.title}</p>
+                        <div 
+                          key={m.id} 
+                          onClick={() => navigate(`/play/${m.id}`)}
+                          className="group cursor-pointer relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"
+                        >
+                            <img 
+                              src={imageUrl2 + m.backdrop_path} 
+                              className="w-full h-28 sm:h-32 object-cover rounded-lg transition-all" 
+                              alt={m.title || m.name}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all rounded-lg flex items-end p-2 sm:p-3">
+                              <p className="text-xs sm:text-sm font-semibold text-white opacity-0 group-hover:opacity-100 line-clamp-2">
+                                {m.title || m.name}
+                              </p>
+                            </div>
+                            {/* Play icon overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="bg-[#5b7ea4] p-3 rounded-full shadow-lg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                  <polygon points="5,3 19,12 5,21"/>
+                                </svg>
+                              </div>
+                            </div>
                         </div>
                     ))}
                 </div>
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

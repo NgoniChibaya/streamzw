@@ -120,7 +120,13 @@ function MoviePopUp(props) {
                   </button>
                   {/*Movie Trailer or Image*/}
                   {PopupInfo.backdrop_path ? (
-                    <img src={`${imageUrl + PopupInfo.backdrop_path}`} />
+                    <img 
+                      src={`${imageUrl + PopupInfo.backdrop_path}`}
+                      alt={PopupInfo.title || PopupInfo.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-auto object-cover rounded-t-lg"
+                    />
                   ) : null}
 
                   <div className="flex ml-4 items-center -mt-14">

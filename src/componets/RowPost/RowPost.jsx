@@ -343,8 +343,11 @@ function RowPost(props) {
                   {props.islarge ? (
                     <>
                       <img
-                        className="rounded-sm"
+                        loading="lazy"
+                        className="rounded-sm w-full h-full object-cover"
                         src={`${imageUrl}${obj.poster_path}`}
+                        alt={obj.title || obj.name}
+                        decoding="async"
                       />
                     </>
                   ) : (
@@ -353,15 +356,17 @@ function RowPost(props) {
                         loading="lazy"
                         className={
                           props.movieData != null
-                            ? "border-b-4 border-red-700 rounded-sm"
-                            : "rounded-sm"
+                            ? "border-b-4 border-red-700 rounded-sm w-full h-full object-cover"
+                            : "rounded-sm w-full h-full object-cover"
                         }
                         src={
                           obj.backdrop_path
                             ? `${imageUrl2}${obj.backdrop_path}`
                             : "https://i.ytimg.com/vi/Mwf--eGs05U/maxresdefault.jpg"
                         }
+                        alt={obj.title || obj.name}
                         onClick={() => handleMoviePopup(obj)}
+                        decoding="async"
                       />
                       {props.showProgress && obj.progress && obj.duration && (
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700">

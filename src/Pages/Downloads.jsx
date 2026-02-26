@@ -197,6 +197,8 @@ const Downloads = () => {
                     }
                     alt={movie.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                    loading="lazy"
+                    decoding="async"
                   />
 
                   {/* Overlay */}

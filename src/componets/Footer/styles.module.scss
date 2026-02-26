@@ -1,255 +1,151 @@
-.footer {
+/* New standardized footer styles for Footer.jsx structure */
+
+.footerContainer {
+  background: linear-gradient(90deg, #0b0b0b, #000000);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  color: #d1d5db;
+  padding: 48px 20px;
+}
+
+.footerContent {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px 30px 15px;
-  color: #a0a0a0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
+  align-items: start;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
 }
 
-.containerFooter {
+.brandSection {
+  .brandName {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .brandDesc {
+    color: #9ca3af;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 320px;
+    margin-bottom: 16px;
+  }
+
+  .socialLinks {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .socialIcon {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:38px;
+    height:38px;
+    border-radius:8px;
+    background: rgba(255,255,255,0.03);
+    color: #ffffff;
+    transition: transform .18s ease, background .18s ease;
+  }
+
+  .socialIcon:hover { transform: translateY(-4px); background: rgba(255,255,255,0.05); }
+}
+
+.linksGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding-bottom: 20px;
+  @media (max-width: 992px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
   }
 }
 
-/* Social Media Section */
-.socialSection {
-  .sectionTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.linkSection {
+  .linkSectionTitle {
+    color: #f8fafc;
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
   }
 
-  .socialIcons {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-  }
+  .linkList { list-style: none; padding: 0; margin: 0; }
 
-  .socialLink {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, #1877f2 0%, #4267b2 100%);
-    color: white;
-    padding: 10px 16px;
-    border-radius: 50px;
+  .linkList li { margin-bottom: 8px; }
+
+  .link {
+    color: #9ca3af;
     text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(24, 119, 242, 0.5);
-      background: linear-gradient(135deg, #4267b2 0%, #1877f2 100%);
-      text-decoration: none;
-      color: white;
-    }
-
-    .icon {
-      width: 16px;
-      height: 16px;
-      filter: brightness(0) invert(1);
-    }
-
-    .iconLabel {
-      font-weight: 600;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    font-size: 0.95rem;
+    transition: color .15s ease;
   }
+
+  .link:hover { color: #ffffff; text-decoration: underline; }
 }
 
-/* Contact Section */
-.contactSection {
-  .sectionTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+.newsletterDesc { color: #9ca3af; margin-bottom: 10px; }
 
-  .contactDetails {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-.contactItem {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    margin-bottom: 8px;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(79, 172, 254, 0.5);
-      transform: translateX(5px);
-    }
-
-    .contactIcon {
-      width: 20px;
-      height: 20px;
-      color: #4facfe;
-      flex-shrink: 0;
-    }
-
-    .contactLink {
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 1.1rem;
-      font-weight: 500;
-      transition: color 0.3s ease;
-
-      &:hover {
-        color: #4facfe;
-        text-decoration: underline;
-      }
-    }
-  }
+.newsletterForm {
+  display:flex;
+  gap:8px;
+  align-items:center;
 }
 
-/* Footer Bottom */
+.emailInput {
+  flex:1;
+  padding:10px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #fff;
+  border-radius:8px;
+  outline:none;
+}
+
+.subscribeBtn {
+  padding:10px 14px;
+  background:#5b7ea4;
+  color:#fff;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.successMsg { color: #86efac; margin-top:8px; font-size:0.9rem; }
+
 .footerBottom {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 15px;
+  max-width: 1200px;
+  margin: 20px auto 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding-top:18px;
+  border-top: 1px solid rgba(255,255,255,0.04);
 
-  @media (max-width: 768px) {
-    flex-direction: row;
-    gap: 20px;
-    text-align: left;
-  }
+  @media (max-width: 520px) { flex-direction:column; align-items:flex-start; gap:8px; }
 }
 
-.languageSelector {
-  .languageBtn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.85rem;
+.bottomLeft { color:#9ca3af; font-size:0.9rem; }
+.bottomRight { display:flex; gap:10px; align-items:center; }
+.bottomLink { color:#9ca3af; text-decoration:none; font-size:0.9rem; }
+.bottomLink:hover { color:#fff; text-decoration:underline; }
+.separator { color:#555; margin:0 6px; }
 
-    &:hover {
-      background: rgba(79, 172, 254, 0.2);
-      border-color: #4facfe;
-      transform: translateY(-1px);
-    }
-
-    .languageIcon {
-      width: 16px;
-      height: 16px;
-      color: #4facfe;
-    }
-  }
-}
-
-.copyright {
-  color: #666666;
-  font-size: 0.8rem;
-  font-weight: 400;
-
-  span {
-    opacity: 0.8;
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .footer {
-    font-size: 0.85rem;
-    padding: 20px 15px 12px;
-  }
-
-  .socialSection,
-  .contactSection {
-    .sectionTitle {
-      font-size: 0.9rem;
-    }
-  }
-
-  .socialLink {
-    padding: 7px 10px;
-    gap: 6px;
-    
-    .icon {
-      width: 20px;
-      height: 20px;
-    }
-    
-    .iconLabel {
-      font-size: 0.7rem;
-    }
-  }
-
-  .contactItem {
-    padding: 8px;
-    
-    .contactLink {
-      font-size: 0.9rem;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .footer {
-    font-size: 0.8rem;
-    padding: 15px 12px 10px;
-  }
-
-  .containerFooter {
-    gap: 15px;
-  }
-
-  .socialLink {
-    padding: 5px 8px;
-    gap: 5px;
-    
-    .icon {
-      width: 16px;
-      height: 16px;
-    }
-    
-    .iconLabel {
-      font-size: 0.65rem;
-    }
-  }
-
-  .contactItem {
-    padding: 6px;
-    gap: 8px;
-    
-    .contactLink {
-      font-size: 0.85rem;
-    }
-  }
+/* Small adjustments */
+@media (max-width: 520px) {
+  .brandDesc { max-width: 100%; }
+  .emailInput { padding: 8px 10px; }
+  .subscribeBtn { padding: 8px 10px; }
 }
