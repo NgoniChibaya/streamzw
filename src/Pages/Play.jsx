@@ -553,7 +553,7 @@ function Play() {
                       <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <h2 className="text-base sm:text-lg font-bold text-white hidden sm:block line-clamp-1">
+                  <h2 className="text-sm sm:text-lg font-bold text-white line-clamp-1 max-w-[60%] sm:max-w-[40%] truncate">
                     {movieDetails.title || 'Now Playing'}
                   </h2>
                 </div>
