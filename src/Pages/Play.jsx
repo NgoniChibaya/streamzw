@@ -45,6 +45,7 @@ function Play() {
   const [showDownloadProgress, setShowDownloadProgress] = useState(false);
   const [downloadData, setDownloadData] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -500,11 +501,13 @@ function Play() {
             onMouseMove={handleMouseMove}
             onTouchStart={handleTouchStart}
             onMouseLeave={() => { if (!isTouchRef.current && !videoRef.current?.paused) setShowControls(false); }}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <video 
               ref={videoRef} 
               autoPlay 
               className="w-full h-full object-contain"
+              style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}
               onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
               onLoadedMetadata={(e) => setDuration(e.target.duration)}
               onEnded={handleVideoEnded}
@@ -567,16 +570,24 @@ function Play() {
             <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
               <div className="flex justify-between items-start max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
+                  {/* Back button on desktop, hamburger on mobile */}
                   <button 
-                    onClick={() => {
-                      if (hlsRef.current) hlsRef.current.destroy();
-                      navigate('/');
-                    }}
-                    className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
+                    onClick={() => { if (hlsRef.current) hlsRef.current.destroy(); navigate('/'); }}
+                    className="hidden sm:inline-flex text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
                     title="Back (ESC)"
                   >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => setShowMobileMenu(true)}
+                    className="inline-flex sm:hidden text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
+                    title="Menu"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                   <h2 className="text-sm sm:text-lg font-bold text-white line-clamp-1 max-w-[60%] sm:max-w-[40%] truncate">
@@ -590,6 +601,20 @@ function Play() {
                 </div>
               </div>
             </div>
+
+            {/* Mobile side menu overlay */}
+            {showMobileMenu && (
+              <div className="absolute inset-0 z-60 flex">
+                <div className="w-64 bg-neutral-900 text-white p-4 shadow-xl">
+                  <button onClick={() => setShowMobileMenu(false)} className="mb-4 text-white/80">Close</button>
+                  <ul className="flex flex-col gap-3">
+                    <li><button onClick={() => { setShowMobileMenu(false); navigate('/'); }} className="text-left">Home</button></li>
+                    <li><button onClick={() => { setShowMobileMenu(false); navigate('/profile'); }} className="text-left">Profile</button></li>
+                  </ul>
+                </div>
+                <div className="flex-1" onClick={() => setShowMobileMenu(false)} />
+              </div>
+            )}
 
             {/* Bottom Controls - Enhanced */}
             <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
@@ -645,10 +670,10 @@ function Play() {
                       )}
                     </button>
                     
-                    {/* Skip Backwards */}
+                    {/* Skip Backwards (hidden on mobile) */}
                     <button 
                       onClick={() => videoRef.current && (videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10))}
-                      className="text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
+                      className="hidden sm:inline-flex text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
                       title="Rewind 10s (←)"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -656,10 +681,10 @@ function Play() {
                       </svg>
                     </button>
 
-                    {/* Skip Forward */}
+                    {/* Skip Forward (hidden on mobile) */}
                     <button 
                       onClick={() => videoRef.current && (videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 10))}
-                      className="text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
+                      className="hidden sm:inline-flex text-white/70 hover:text-white transition-colors hover:bg-white/10 p-2 sm:p-2.5 rounded-full transform hover:scale-110 duration-200"
                       title="Forward 10s (→)"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
