@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { updateDoc, doc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { updateDoc, setDoc, doc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import { db } from "../Firebase/FirebaseConfig";
 import { AuthContext } from "../Context/UserContext";
 import toast, { Toaster } from "react-hot-toast";
@@ -36,7 +36,11 @@ function useUpdateWatchedMovies() {
       // Keep only last 50
       movies = movies.slice(0, 50);
       
-      await updateDoc(docRef, { movies });
+      if (docSnap.exists()) {
+        await updateDoc(docRef, { movies });
+      } else {
+        await setDoc(docRef, { movies });
+      }
     } catch (error) {
       console.error("Error adding to watched:", error);
     }
@@ -48,9 +52,9 @@ function useUpdateWatchedMovies() {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        let movies = docSnap.data().movies;
+        let movies = docSnap.data().movies || [];
         const index = movies.findIndex(m => m.id === movieId);
-        
+
         if (index !== -1) {
           movies[index] = {
             ...movies[index],
@@ -59,9 +63,30 @@ function useUpdateWatchedMovies() {
             timestamp: Date.now(),
             completed: (progress / duration) > 0.9
           };
-          
+
+          await updateDoc(docRef, { movies });
+        } else {
+          // If the movie entry doesn't exist yet, append a minimal entry
+          const newEntry = {
+            id: movieId,
+            progress: progress,
+            duration: duration,
+            timestamp: Date.now(),
+            completed: (progress / duration) > 0.9
+          };
+          movies.unshift(newEntry);
           await updateDoc(docRef, { movies });
         }
+      } else {
+        // Create the document with the single movie entry
+        const newEntry = {
+          id: movieId,
+          progress: progress,
+          duration: duration,
+          timestamp: Date.now(),
+          completed: (progress / duration) > 0.9
+        };
+        await setDoc(docRef, { movies: [newEntry] });
       }
     } catch (error) {
       console.error("Error updating progress:", error);

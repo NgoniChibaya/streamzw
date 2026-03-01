@@ -222,7 +222,7 @@ function Play() {
       if (watchedDoc.exists()) {
         const watchedData = watchedDoc.data();
         console.log("Watched data:", watchedData);
-        const movieProgress = watchedData.movies?.find(m => m.id === id);
+        const movieProgress = watchedData.movies?.find(m => String(m.id) === String(id));
         console.log("Movie progress found:", movieProgress);
         
         if (movieProgress && movieProgress.progress > 30 && !movieProgress.completed) {
