@@ -8,6 +8,14 @@ function useUpdateWatchedMovies() {
   const { User } = useContext(AuthContext);
   const [Error, setError] = useState(false);
 
+  const cleanObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    return Object.entries(obj).reduce((acc, [k, v]) => {
+      if (v !== undefined) acc[k] = v;
+      return acc;
+    }, {});
+  };
+
   function notify() {
     toast.success("  Movie removed from Watched List  ");
   }
@@ -18,8 +26,8 @@ function useUpdateWatchedMovies() {
     try {
       const docRef = doc(db, "WatchedMovies", User.uid);
       const docSnap = await getDoc(docRef);
-      
-      let movies = docSnap.exists() ? docSnap.data().movies : [];
+
+      let movies = docSnap.exists() ? (docSnap.data().movies || []) : [];
       
       // Remove existing entry if found
       movies = movies.filter(m => m.id !== movie.id);
@@ -33,9 +41,9 @@ function useUpdateWatchedMovies() {
         completed: duration > 0 ? (progress / duration) > 0.9 : false
       });
       
-      // Keep only last 50
-      movies = movies.slice(0, 50);
-      
+      // Keep only last 50 and remove undefined fields
+      movies = movies.slice(0, 50).map(cleanObject);
+
       if (docSnap.exists()) {
         await updateDoc(docRef, { movies });
       } else {
@@ -56,36 +64,38 @@ function useUpdateWatchedMovies() {
         const index = movies.findIndex(m => m.id === movieId);
 
         if (index !== -1) {
-          movies[index] = {
+          movies[index] = cleanObject({
             ...movies[index],
             progress: progress,
             duration: duration,
             timestamp: Date.now(),
-            completed: (progress / duration) > 0.9
-          };
+            completed: (progress / (duration || 1)) > 0.9
+          });
 
+          movies = movies.map(cleanObject);
           await updateDoc(docRef, { movies });
         } else {
           // If the movie entry doesn't exist yet, append a minimal entry
-          const newEntry = {
+          const newEntry = cleanObject({
             id: movieId,
             progress: progress,
             duration: duration,
             timestamp: Date.now(),
-            completed: (progress / duration) > 0.9
-          };
+            completed: (progress / (duration || 1)) > 0.9
+          });
           movies.unshift(newEntry);
+          movies = movies.map(cleanObject);
           await updateDoc(docRef, { movies });
         }
       } else {
         // Create the document with the single movie entry
-        const newEntry = {
+        const newEntry = cleanObject({
           id: movieId,
           progress: progress,
           duration: duration,
           timestamp: Date.now(),
-          completed: (progress / duration) > 0.9
-        };
+          completed: (progress / (duration || 1)) > 0.9
+        });
         await setDoc(docRef, { movies: [newEntry] });
       }
     } catch (error) {

@@ -50,6 +50,7 @@ function Play() {
   const hlsRef = useRef(null);
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+  const isTouchRef = useRef(false);
 
   const { addToMyList, removeFromMyList, PopupMessage } = useUpdateMylist();
   const { addToLikedMovies, removeFromLikedMovies } = useUpdateLikedMovies();
@@ -323,10 +324,21 @@ function Play() {
   };
 
   const handleMouseMove = () => {
+    if (isTouchRef.current) return;
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (!videoRef.current || videoRef.current.paused) return;
+      setShowControls(false);
+    }, 3000);
+  };
+
+  const handleTouchStart = (e) => {
+    isTouchRef.current = true;
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = setTimeout(() => {
       if (!videoRef.current || videoRef.current.paused) return;
       setShowControls(false);
@@ -473,7 +485,8 @@ function Play() {
             ref={containerRef} 
             className="relative w-full max-w-7xl aspect-video bg-black group cursor-pointer overflow-hidden"
             onMouseMove={handleMouseMove}
-            onMouseLeave={() => !videoRef.current?.paused && setShowControls(false)}
+            onTouchStart={handleTouchStart}
+            onMouseLeave={() => { if (!isTouchRef.current && !videoRef.current?.paused) setShowControls(false); }}
           >
             <video 
               ref={videoRef} 
