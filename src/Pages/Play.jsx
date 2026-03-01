@@ -389,7 +389,14 @@ function Play() {
     console.log("Video playback ended. Duration:", duration, "Current time:", currentTime);
     // Mark as completed in watched movies
     if (User && movieDetails) {
-      addToWatchedMovies(movieDetails, duration, duration);
+      const finalDuration = duration || videoRef.current?.duration || 0;
+      const finalProgress = finalDuration > 0 ? finalDuration : (videoRef.current?.currentTime || 0);
+      if (finalDuration > 0) {
+        addToWatchedMovies(movieDetails, finalProgress, finalDuration);
+      } else {
+        // Avoid saving meaningless zero-duration entries
+        console.log('Skipping addToWatchedMovies: duration unknown or zero');
+      }
     }
   };
 
@@ -454,7 +461,13 @@ function Play() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (User && movieDetails && videoRef.current) {
-        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, duration);
+        const actualDuration = duration || videoRef.current.duration || 0;
+        const actualTime = videoRef.current.currentTime || 0;
+        if (actualDuration > 0) {
+          updateWatchProgress(movieDetails.id, actualTime, actualDuration);
+        } else {
+          console.log('Skipping updateWatchProgress on unload: duration unknown or zero');
+        }
       }
     };
 
