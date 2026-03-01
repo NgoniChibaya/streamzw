@@ -45,7 +45,6 @@ function Play() {
   const [showDownloadProgress, setShowDownloadProgress] = useState(false);
   const [downloadData, setDownloadData] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -495,7 +494,22 @@ function Play() {
              <button onClick={() => navigate(-1)} className="mt-4 bg-white text-black px-4 py-2 rounded">Go Back</button>
           </div>
         ) : (
-          <div 
+          <>
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-4 flex items-center gap-3">
+              <button 
+                onClick={() => { if (hlsRef.current) hlsRef.current.destroy(); navigate('/'); }}
+                className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200 flex-shrink-0"
+                title="Back"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {movieDetails.title && (
+                <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{movieDetails.title}</h2>
+              )}
+            </div>
+            <div 
             ref={containerRef} 
             className="relative w-full max-w-7xl aspect-video bg-black group cursor-pointer overflow-hidden"
             onMouseMove={handleMouseMove}
@@ -568,32 +582,8 @@ function Play() {
 
             {/* Top Controls - Header Bar */}
             <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="flex justify-between items-start max-w-7xl mx-auto">
-                <div className="flex items-center gap-3">
-                  {/* Back button on desktop, hamburger on mobile */}
-                  <button 
-                    onClick={() => { if (hlsRef.current) hlsRef.current.destroy(); navigate('/'); }}
-                    className="hidden sm:inline-flex text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
-                    title="Back (ESC)"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={() => setShowMobileMenu(true)}
-                    className="inline-flex sm:hidden text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200"
-                    title="Menu"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                  <h2 className="text-sm sm:text-lg font-bold text-white line-clamp-1 max-w-[60%] sm:max-w-[40%] truncate">
-                    {movieDetails.title || 'Now Playing'}
-                  </h2>
-                </div>
+              <div className="flex justify-between items-end max-w-7xl mx-auto">
+                <div></div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs sm:text-sm text-white/70 bg-black/40 px-2 py-1 rounded">
                     {isOnline ? '🟢 Online' : '🔴 Offline'}
@@ -602,19 +592,6 @@ function Play() {
               </div>
             </div>
 
-            {/* Mobile side menu overlay */}
-            {showMobileMenu && (
-              <div className="absolute inset-0 z-60 flex">
-                <div className="w-64 bg-neutral-900 text-white p-4 shadow-xl">
-                  <button onClick={() => setShowMobileMenu(false)} className="mb-4 text-white/80">Close</button>
-                  <ul className="flex flex-col gap-3">
-                    <li><button onClick={() => { setShowMobileMenu(false); navigate('/'); }} className="text-left">Home</button></li>
-                    <li><button onClick={() => { setShowMobileMenu(false); navigate('/profile'); }} className="text-left">Profile</button></li>
-                  </ul>
-                </div>
-                <div className="flex-1" onClick={() => setShowMobileMenu(false)} />
-              </div>
-            )}
 
             {/* Bottom Controls - Enhanced */}
             <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
@@ -790,6 +767,7 @@ function Play() {
               </div>
             </div>
           </div>
+          </>
         )}
 
         {movieDetails.title && (
