@@ -574,13 +574,13 @@ function Play() {
                   onClick={handleSeek}
                   onMouseMove={handleMouseMove}
                 >
-                  {/* Buffering indicator */}
-                  <div className="h-full bg-gray-500/70 rounded" style={{ width: '100%', opacity: 0.3 }} />
-                  
-                  {/* Current progress */}
+                  {/* Buffering indicator (overlay) */}
+                  <div className="absolute left-0 top-0 h-full bg-gray-500/70 rounded" style={{ width: '100%', opacity: 0.3 }} />
+
+                  {/* Current progress (overlay) */}
                   <div 
-                    className="h-full bg-[#5b7ea4] rounded transition-all"
-                    style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }} 
+                    className="absolute left-0 top-0 h-full bg-[#5b7ea4] rounded transition-all"
+                    style={{ width: `${duration > 0 ? (currentTime/duration)*100 : 0}%`, zIndex: 1 }} 
                   />
                   
                   {/* Hover scrubber dot */}
