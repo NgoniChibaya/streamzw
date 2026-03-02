@@ -342,8 +342,8 @@ function Play() {
       return;
     }
 
-    if (!movieDetails.id) {
-      toast.error('Movie information not loaded yet');
+    if (!id) {
+      toast.error('Movie ID not available');
       return;
     }
 
@@ -351,8 +351,8 @@ function Play() {
       setIsDownloading(true);
       toast.loading('Initializing download...');
 
-      // Initialize download
-      const downloadInfo = await initializeDownload(movieDetails.id, movieDetails, 'auto');
+      // Initialize download using the ID from URL params
+      const downloadInfo = await initializeDownload(id, movieDetails, 'auto');
       
       // Start downloading segments
       await downloadSegments(downloadInfo.movieId, downloadInfo.s3Url, downloadInfo.selectedLevel);
