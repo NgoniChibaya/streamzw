@@ -14,8 +14,9 @@ import useUpdateMylist from "../CustomHooks/useUpdateMylist";
 import useUpdateLikedMovies from "../CustomHooks/useUpdateLikedMovies";
 import useNetworkStatus from "../CustomHooks/useNetworkStatus";
 import DownloadProgress from "../componets/Download/DownloadProgress";
-import { checkIfDownloaded } from "../Services/downloadService";
+import { checkIfDownloaded, initializeDownload, downloadSegments } from "../Services/downloadService";
 import { schedulePeriodicCleanup } from "../Services/storageCleanup";
+import toast from "react-hot-toast";
 
 import "swiper/css";
 import usePlayMovie from "../CustomHooks/usePlayMovie";
@@ -332,6 +333,39 @@ function Play() {
     } else {
       document.exitFullscreen();
       setIsFullscreen(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (isDownloaded) {
+      alert('Video already downloaded');
+      return;
+    }
+
+    if (!movieDetails.id) {
+      toast.error('Movie information not loaded yet');
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      toast.loading('Initializing download...');
+
+      // Initialize download
+      const downloadInfo = await initializeDownload(movieDetails.id, movieDetails, 'auto');
+      
+      // Start downloading segments
+      await downloadSegments(downloadInfo.movieId, downloadInfo.s3Url, downloadInfo.selectedLevel);
+      
+      setIsDownloaded(true);
+      toast.dismiss(); // Clear loading toast
+      toast.success('Download completed!');
+      setIsDownloading(false);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.dismiss();
+      toast.error(error.message || 'Download failed');
+      setIsDownloading(false);
     }
   };
 
@@ -780,6 +814,20 @@ function Play() {
                         </div>
                       )}
                     </div>
+
+                    {/* Download Button */}
+                    <button 
+                      onClick={handleDownload}
+                      disabled={isDownloaded || isDownloading}
+                      className={`text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-full transform hover:scale-110 duration-200 ${
+                        isDownloaded || isDownloading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      title={isDownloaded ? 'Downloaded' : isDownloading ? 'Downloading...' : 'Download'}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
 
                     {/* Fullscreen */}
                     <button 

@@ -1,8 +1,10 @@
 import React from "react";
 import { useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import Banner from "../componets/Banner/Banner";
 import Footer from "../componets/Footer/Footer";
 import RowPost from "../componets/RowPost/RowPost";
+import useNetworkStatus from "../CustomHooks/useNetworkStatus";
 import {
   originals,
   trending,
@@ -21,8 +23,17 @@ import { AuthContext } from "../Context/UserContext";
 
 function Home() {
   const { User } = useContext(AuthContext);
+  const { isOnline } = useNetworkStatus();
+  const navigate = useNavigate();
   const [watchedMovies, setWatchedMovies] = useState([]);
   const [continueWatching, setContinueWatching] = useState([]);
+
+  // Redirect to downloads when offline
+  useEffect(() => {
+    if (!isOnline) {
+      navigate('/downloads');
+    }
+  }, [isOnline, navigate]);
 
   useEffect(() => {
     getDoc(doc(db, "WatchedMovies", User.uid)).then((result) => {

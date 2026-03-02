@@ -105,6 +105,13 @@ function Navbar(props) {
                     >
                       Liked
                     </Link>
+
+                    <Link
+                      to={"/downloads"}
+                      className="py-2 font-medium text-white transition ease-in-out delay-150 rounded-md cursor-pointer hover:text-[#5b7ea4] lg:px-3 text-m"
+                    >
+                      Downloads
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -269,6 +276,12 @@ function Navbar(props) {
                   <Link to={"/liked"}>
                     <a className="block px-3 py-2 text-base font-medium text-white rounded-md hover:bg-[#5b7ea4] hover:text-white">
                       Liked
+                    </a>
+                  </Link>
+
+                  <Link to={"/downloads"}>
+                    <a className="block px-3 py-2 text-base font-medium text-white rounded-md hover:bg-[#5b7ea4] hover:text-white">
+                      Downloads
                     </a>
                   </Link>
 
