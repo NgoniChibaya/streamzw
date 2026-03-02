@@ -45,12 +45,14 @@ function Play() {
   const [showDownloadProgress, setShowDownloadProgress] = useState(false);
   const [downloadData, setDownloadData] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
   const isTouchRef = useRef(false);
+  const progressBarRef = useRef(null);
 
   const { addToMyList, removeFromMyList, PopupMessage } = useUpdateMylist();
   const { addToLikedMovies, removeFromLikedMovies } = useUpdateLikedMovies();
@@ -266,8 +268,15 @@ function Play() {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
       videoRef.current.play();
+      // Hide controls immediately on mobile when video starts
+      if (isTouchRef.current) {
+        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+        controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 1000);
+      }
     } else {
       videoRef.current.pause();
+      // Show controls when pausing
+      setShowControls(true);
     }
     setIsPlayingLocal(!videoRef.current.paused);
   };
@@ -277,6 +286,24 @@ function Play() {
     const rect = e.currentTarget.getBoundingClientRect();
     const pos = (e.clientX - rect.left) / rect.width;
     videoRef.current.currentTime = pos * videoRef.current.duration;
+  };
+
+  const handleProgressMouseDown = (e) => {
+    setIsDragging(true);
+    handleSeek(e);
+  };
+
+  const handleProgressMouseMove = (e) => {
+    if (isDragging && videoRef.current && progressBarRef.current) {
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      const clampedPos = Math.max(0, Math.min(1, pos));
+      videoRef.current.currentTime = clampedPos * videoRef.current.duration;
+    }
+  };
+
+  const handleProgressMouseUp = () => {
+    setIsDragging(false);
   };
 
   const handleVolumeChange = (e) => {
@@ -339,10 +366,13 @@ function Play() {
     isTouchRef.current = true;
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    
+    // On mobile, hide controls faster (1 second instead of 3) if video is playing
+    const hideDelay = (videoRef.current && !videoRef.current.paused) ? 1000 : 3000;
     controlsTimeoutRef.current = setTimeout(() => {
       if (!videoRef.current || videoRef.current.paused) return;
       setShowControls(false);
-    }, 3000);
+    }, hideDelay);
   };
 
   // Keyboard shortcuts
@@ -482,11 +512,23 @@ function Play() {
     }
   }, [networkSpeed, qualityLevels]);
 
+  // Add global mouse listeners for dragging progress bar
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleProgressMouseMove);
+      document.addEventListener('mouseup', handleProgressMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleProgressMouseMove);
+        document.removeEventListener('mouseup', handleProgressMouseUp);
+      };
+    }
+  }, [isDragging]);
+
   return (
     <div className="min-h-screen bg-black text-white">
       {PopupMessage}
       
-      <div className="pt-20 flex flex-col items-center">
+      <div className="pt-12 flex flex-col items-center">
         {videoError ? (
           <div className="h-[60vh] flex flex-col items-center justify-center">
              <h2 className="text-2xl font-bold text-red-600">Access Denied / Video Unavailable</h2>
@@ -598,8 +640,10 @@ function Play() {
               <div className="max-w-7xl mx-auto">
                 {/* Progress Bar - Enhanced with buffering */}
                 <div 
+                  ref={progressBarRef}
                   className="w-full h-2 sm:h-1 bg-gray-600/50 cursor-pointer mb-4 rounded relative group touch-manipulation hover:h-1.5 transition-all"
                   onClick={handleSeek}
+                  onMouseDown={handleProgressMouseDown}
                   onMouseMove={handleMouseMove}
                 >
                   {/* Buffering indicator (overlay) */}
