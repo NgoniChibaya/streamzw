@@ -280,7 +280,7 @@ function UserMovieSection(props) {
             <div>
               <div className="w-[100vw] h-[70vh] flex justify-center items-center">
                 {!isResultEmpty ? (
-                  <ClipLoader color="#ff0000" size={160} />
+                  <ClipLoader color="#5b7ea4" size={160} />
                 ) : (
                   <div>
                     <h1 className="text-white text-5xl text-center">

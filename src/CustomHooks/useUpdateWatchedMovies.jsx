@@ -24,6 +24,12 @@ function useUpdateWatchedMovies() {
   }
   const addToWatchedMovies = async (movie, progress = 0, duration = 0) => {
     try {
+      // Don't save if duration is 0 or invalid
+      if (!duration || duration <= 0) {
+        console.log('Skipping addToWatchedMovies: duration is invalid', { movieId: movie.id, progress, duration });
+        return;
+      }
+
       const docRef = doc(db, "WatchedMovies", User.uid);
       const docSnap = await getDoc(docRef);
 
@@ -38,7 +44,7 @@ function useUpdateWatchedMovies() {
         progress: progress,
         duration: duration,
         timestamp: Date.now(),
-        completed: duration > 0 ? (progress / duration) > 0.9 : false
+        completed: (progress / duration) > 0.9
       });
       
       // Keep only last 50 and remove undefined fields
@@ -56,6 +62,12 @@ function useUpdateWatchedMovies() {
 
   const updateWatchProgress = async (movieId, progress, duration) => {
     try {
+      // Don't save if duration is 0 or invalid
+      if (!duration || duration <= 0) {
+        console.log('Skipping progress save: duration is invalid', { movieId, progress, duration });
+        return;
+      }
+
       const docRef = doc(db, "WatchedMovies", User.uid);
       const docSnap = await getDoc(docRef);
       
@@ -69,7 +81,7 @@ function useUpdateWatchedMovies() {
             progress: progress,
             duration: duration,
             timestamp: Date.now(),
-            completed: (progress / (duration || 1)) > 0.9
+            completed: (progress / duration) > 0.9
           });
 
           movies = movies.map(cleanObject);
@@ -81,7 +93,7 @@ function useUpdateWatchedMovies() {
             progress: progress,
             duration: duration,
             timestamp: Date.now(),
-            completed: (progress / (duration || 1)) > 0.9
+            completed: (progress / duration) > 0.9
           });
           movies.unshift(newEntry);
           movies = movies.map(cleanObject);
@@ -94,7 +106,7 @@ function useUpdateWatchedMovies() {
           progress: progress,
           duration: duration,
           timestamp: Date.now(),
-          completed: (progress / (duration || 1)) > 0.9
+          completed: (progress / duration) > 0.9
         });
         await setDoc(docRef, { movies: [newEntry] });
       }

@@ -476,11 +476,12 @@ function Play() {
 
   // Save progress periodically while watching
   useEffect(() => {
-    if (!User || !movieDetails || duration === 0) return;
+    if (!User || !movieDetails) return;
 
     const saveProgressInterval = setInterval(() => {
-      if (videoRef.current && !videoRef.current.paused) {
-        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, duration);
+      if (videoRef.current && !videoRef.current.paused && videoRef.current.duration > 0) {
+        const actualDuration = duration > 0 ? duration : videoRef.current.duration;
+        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, actualDuration);
       }
     }, 5000); // Save every 5 seconds
 
