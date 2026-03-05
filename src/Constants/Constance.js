@@ -5,6 +5,7 @@ export const imageUrl = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
 export const imageUrl2 = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
 export const baseUrl1 = "http://localhost:8000/api";
 export const DJANGO_API_URL1 = "http://localhost:8000/api";
+//
 
 export const genresList = [
   {
