@@ -1,5 +1,5 @@
-export const baseUrl = "https://streamzw.com/api";
-export const DJANGO_API_URL = "https://streamzw.com/api";
+export const baseUrl = "https://api.streamzw.com/api";
+export const DJANGO_API_URL = "https://api.streamzw.com/api";
 export const API_KEY = "ecb37597e45cfeed0586f3cd57233d0b";
 export const imageUrl = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
 export const imageUrl2 = "https://zim-stream-flix.s3.us-east-1.amazonaws.com/";
