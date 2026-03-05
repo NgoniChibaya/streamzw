@@ -28,7 +28,7 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
     // Check if video_url is already a complete URL (from media server) or needs S3 prepending
     const s3Url = response.data.video_url.startsWith('http') 
       ? response.data.video_url 
-      : `https://streamzw-content.s3.us-east-1.amazonaws.com/processed/${response.data.video_url}`;
+      : `${response.data.video_url}`;
 
     // Create a temporary HLS instance to get manifest
     const tempHls = new Hls({
