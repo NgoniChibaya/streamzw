@@ -3,6 +3,7 @@ import { baseUrl } from "./Constants/Constance";
 
 const instance = axios.create({
   baseURL: baseUrl,
+  withCredentials: true,
 });
 
 // Add request interceptor to include Django token in all requests

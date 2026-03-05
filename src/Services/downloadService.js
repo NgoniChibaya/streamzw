@@ -33,7 +33,7 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
     // Create a temporary HLS instance to get manifest
     const tempHls = new Hls({
       xhrSetup: function (xhr) {
-        xhr.withCredentials = false;
+        xhr.withCredentials = true;
       }
     });
 
@@ -119,7 +119,9 @@ export const downloadSegments = async (movieId, manifestUrl, selectedLevel) => {
     const movieId_str = movieId.toString ? movieId.toString() : movieId;
     
     // Fetch the playlist for selected level
-    const playlistResponse = await axios.get(manifestUrl);
+    const playlistResponse = await axios.get(manifestUrl, {
+      withCredentials: true
+    });
     const manifestContent = playlistResponse.data;
 
     // Parse M3U8 manifest to get segment URLs
@@ -146,7 +148,8 @@ export const downloadSegments = async (movieId, manifestUrl, selectedLevel) => {
       try {
         const segmentResponse = await axios.get(segmentUrl, {
           responseType: 'arraybuffer',
-          timeout: 30000
+          timeout: 30000,
+          withCredentials: true
         });
 
         await saveSegment(movieId_str, i, segmentResponse.data);
