@@ -29,9 +29,11 @@ function Home() {
   const [continueWatching, setContinueWatching] = useState([]);
 
   // Redirect to downloads when offline
+
   useEffect(() => {
     if (!isOnline) {
       navigate('/downloads');
+      console.log('You are offline. Redirecting to downloads page.');
     }
   }, [isOnline, navigate]);
 
