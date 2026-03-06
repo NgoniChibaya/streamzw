@@ -14,7 +14,7 @@ import useUpdateMylist from "../CustomHooks/useUpdateMylist";
 import useUpdateLikedMovies from "../CustomHooks/useUpdateLikedMovies";
 import useNetworkStatus from "../CustomHooks/useNetworkStatus";
 import DownloadProgress from "../componets/Download/DownloadProgress";
-import { checkIfDownloaded, initializeDownload, downloadSegments } from "../Services/downloadService";
+import { checkIfDownloaded, initializeDownload, downloadSegments, getDownloadedMovie } from "../Services/downloadService";
 import { createOfflineHlsInstance } from "../Services/offlineHlsLoader";
 import { schedulePeriodicCleanup } from "../Services/storageCleanup";
 import toast from "react-hot-toast";
@@ -148,13 +148,28 @@ function Play() {
         .catch(() => setVideoError(true));
     });
 
-    // Fetch Metadata
-    axios.get(`/movie/${id}?api_key=${API_KEY}&language=en-US`)
-      .then((res) => {
-        setMovieDetails(res.data);
-        axios.get(`movie/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`)
-          .then((s) => setSimilarMovies(s.data.results.slice(0, 8)));
-      });
+    // Fetch Metadata from downloaded movie or skip if offline
+    if (isDownloaded) {
+      const downloadedMovie = await getMovie(id);
+      if (downloadedMovie) {
+        setMovieDetails({
+          id: downloadedMovie.id,
+          title: downloadedMovie.title,
+          original_title: downloadedMovie.title,
+          overview: downloadedMovie.overview,
+          poster_path: downloadedMovie.poster_path,
+          backdrop_path: downloadedMovie.backdrop_path
+        });
+      }
+    } else {
+      axios.get(`/movie/${id}?api_key=${API_KEY}&language=en-US`)
+        .then((res) => {
+          setMovieDetails(res.data);
+          axios.get(`movie/${id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`)
+            .then((s) => setSimilarMovies(s.data.results.slice(0, 8)));
+        })
+        .catch(() => console.log('Failed to fetch movie metadata'));
+    }
 
     // Check for saved progress and auto-resume
     checkSavedProgress();
@@ -264,9 +279,9 @@ function Play() {
         if (moviesData && typeof moviesData === 'object' && !Array.isArray(moviesData)) {
           movieProgress = moviesData[String(id)];
         }
-        // Handle array format (old) - convert to object map
-        else if (Array.isArray(moviesData)) {
-          movieProgress = moviesData.find(m => String(m.id) === String(id));
+        // Handle array format (old)
+        else if (Array.isArray(moviesData) && moviesData.length > 0) {
+          movieProgress = moviesData.find(m => String(m?.id) === String(id));
         }
 
         console.log("Movie progress found:", movieProgress);

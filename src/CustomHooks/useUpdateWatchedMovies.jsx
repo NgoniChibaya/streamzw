@@ -80,19 +80,19 @@ function useUpdateWatchedMovies() {
     }
   };
 
-  const removeFromWatchedMovies = (movie) => {
-    updateDoc(doc(db, "WatchedMovies", User.uid), {
-      movies: arrayRemove(movie),
-    })
-      .then(() => {
-        notify();
-      })
-      .catch((error) => {
-        console.log(error.code);
-        console.log(error.message);
-        alertError(error.message);
-        setError(true);
+  const removeFromWatchedMovies = async (movie) => {
+    try {
+      const docRef = doc(db, "WatchedMovies", User.uid);
+      await updateDoc(docRef, {
+        [`movies.${movie.id}`]: null
       });
+      notify();
+    } catch (error) {
+      console.log(error.code);
+      console.log(error.message);
+      alertError(error.message);
+      setError(true);
+    }
   };
 
   const removePopupMessage = (
