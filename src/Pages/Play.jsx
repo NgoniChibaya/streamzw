@@ -116,28 +116,37 @@ function Play() {
   useEffect(() => {
     window.scrollTo(0, 0);
     schedulePeriodicCleanup();
-    checkIfDownloaded(id).then(setIsDownloaded);
-    
-    // Fetch video and handle CloudFront Signed Cookies
-    console.log("Attempting to fetch video for movie ID:", id);
-    axios.get(`${DJANGO_API_URL}/movies/${id}/video/`, { withCredentials: true })
-      .then((response) => {
-        console.log("Video API response:", response);
-        const { video_url } = response.data || {};
-        console.log("Fetched video URL:", video_url);
-
-        if (!video_url) {
-          console.error("No video URL received from API");
-          setVideoError(true);
-          return;
-        }
-
-        // Backend should set CloudFront-Policy, CloudFront-Signature, CloudFront-Key-Pair-Id as cookies
-        setVideoUrl(video_url);
+    checkIfDownloaded(id).then((downloaded) => {
+      setIsDownloaded(downloaded);
+      
+      // If downloaded, use dummy URL for offline playback
+      if (downloaded) {
+        console.log("Video is downloaded, using offline mode");
+        setVideoUrl('offline://video.m3u8'); // Dummy URL for offline
         setVideoError(false);
-        console.log("Successfully set video URL");
-      })
-      .catch(() => setVideoError(true));
+        return;
+      }
+      
+      // Otherwise fetch from server
+      console.log("Attempting to fetch video for movie ID:", id);
+      axios.get(`${DJANGO_API_URL}/movies/${id}/video/`, { withCredentials: true })
+        .then((response) => {
+          console.log("Video API response:", response);
+          const { video_url } = response.data || {};
+          console.log("Fetched video URL:", video_url);
+
+          if (!video_url) {
+            console.error("No video URL received from API");
+            setVideoError(true);
+            return;
+          }
+
+          setVideoUrl(video_url);
+          setVideoError(false);
+          console.log("Successfully set video URL");
+        })
+        .catch(() => setVideoError(true));
+    });
 
     // Fetch Metadata
     axios.get(`/movie/${id}?api_key=${API_KEY}&language=en-US`)

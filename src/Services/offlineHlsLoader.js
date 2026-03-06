@@ -183,16 +183,20 @@ export class OfflineHlsLoader {
  * Create HLS instance with offline support
  */
 export const createOfflineHlsInstance = (videoRef, movieId, isOfflineMode = false) => {
+  // Create a custom loader class that captures movieId and isOfflineMode
+  class ConfiguredOfflineLoader extends OfflineHlsLoader {
+    constructor(config) {
+      super(movieId, isOfflineMode);
+      this.config = config;
+    }
+  }
+
   const hls = new Hls({
-    loader: OfflineHlsLoader,
+    loader: ConfiguredOfflineLoader,
     xhrSetup: function (xhr, url) {
       xhr.withCredentials = false;
     }
   });
-
-  // Inject custom loader
-  const offlineLoader = new OfflineHlsLoader(movieId, isOfflineMode);
-  hls.loader = offlineLoader;
 
   hls.attachMedia(videoRef);
   return hls;
