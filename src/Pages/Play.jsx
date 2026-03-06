@@ -48,6 +48,9 @@ function Play() {
   const [downloadData, setDownloadData] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [hoverTime, setHoverTime] = useState(0);
+  const [showHoverTime, setShowHoverTime] = useState(false);
+  const [hoverPosition, setHoverPosition] = useState(0);
   
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -115,6 +118,9 @@ function Play() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     schedulePeriodicCleanup();
     checkIfDownloaded(id).then((downloaded) => {
       setIsDownloaded(downloaded);
@@ -369,6 +375,20 @@ function Play() {
     }
   };
 
+  const handleProgressHover = (e) => {
+    if (!progressBarRef.current || !videoRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    const clampedPos = Math.max(0, Math.min(1, pos));
+    setHoverTime(clampedPos * videoRef.current.duration);
+    setHoverPosition(clampedPos * 100);
+    setShowHoverTime(true);
+  };
+
+  const handleProgressMouseLeave = () => {
+    setShowHoverTime(false);
+  };
+
   const handleProgressMouseUp = () => {
     setIsDragging(false);
   };
@@ -455,7 +475,7 @@ function Play() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleMouseMove = () => {
+  const handleMouseMove = (e) => {
     if (isTouchRef.current) return;
     setShowControls(true);
     if (controlsTimeoutRef.current) {
@@ -627,7 +647,7 @@ function Play() {
     <div className="min-h-screen bg-black text-white">
       {PopupMessage}
       
-      <div className="pt-12 flex flex-col items-center">
+      <div className="pt-12 sm:pt-16 flex flex-col items-center">
         {videoError ? (
           <div className="h-[60vh] flex flex-col items-center justify-center">
              <h2 className="text-2xl font-bold text-red-600">Access Denied / Video Unavailable</h2>
@@ -636,7 +656,7 @@ function Play() {
           </div>
         ) : (
           <>
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-4 flex items-center gap-3">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-2 sm:mb-4 flex items-center gap-3">
               <button 
                 onClick={() => { if (hlsRef.current) hlsRef.current.destroy(); navigate('/'); }}
                 className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 transform hover:scale-110 duration-200 flex-shrink-0"
@@ -735,7 +755,10 @@ function Play() {
 
 
             {/* Bottom Controls - Enhanced */}
-            <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            <div 
+              className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+              onMouseEnter={() => setShowControls(true)}
+            >
               <div className="max-w-7xl mx-auto">
                 {/* Progress Bar - Enhanced with buffering */}
                 <div 
@@ -743,7 +766,8 @@ function Play() {
                   className="w-full h-2 sm:h-1 bg-gray-600/50 cursor-pointer mb-4 rounded relative group touch-manipulation hover:h-1.5 transition-all"
                   onClick={handleSeek}
                   onMouseDown={handleProgressMouseDown}
-                  onMouseMove={handleMouseMove}
+                  onMouseMove={handleProgressHover}
+                  onMouseLeave={handleProgressMouseLeave}
                 >
                   {/* Buffering indicator (overlay) */}
                   <div className="absolute left-0 top-0 h-full bg-gray-500/70 rounded" style={{ width: '100%', opacity: 0.3 }} />
@@ -760,12 +784,17 @@ function Play() {
                     style={{ left: `${duration > 0 ? (currentTime/duration)*100 : 0}%` }}
                   />
                   
-                  {/* Time tooltip on hover */}
-                  <div className="absolute -top-10 left-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600">
-                      {formatTime(currentTime === 0 ? 0 : currentTime)}
+                  {/* Time tooltip on hover - YouTube style */}
+                  {showHoverTime && (
+                    <div 
+                      className="absolute -top-10 -translate-x-1/2 pointer-events-none z-10"
+                      style={{ left: `${hoverPosition}%` }}
+                    >
+                      <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600 shadow-lg">
+                        {formatTime(hoverTime)}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Control Buttons */}
