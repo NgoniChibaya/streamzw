@@ -9,6 +9,18 @@ export class OfflineHlsLoader {
   constructor(movieId, isOfflineMode = false) {
     this.movieId = movieId.toString();
     this.isOfflineMode = isOfflineMode;
+    this._xhr = null;
+  }
+
+  destroy() {
+    if (this._xhr) {
+      try {
+        this._xhr.abort();
+      } catch (e) {
+        console.warn('OfflineHlsLoader destroy: failed to abort XHR', e);
+      }
+      this._xhr = null;
+    }
   }
 
   async load(context, config, callbacks) {
@@ -77,6 +89,7 @@ export class OfflineHlsLoader {
 
   _loadFromNetwork(url, callbacks, context) {
     const xhr = new XMLHttpRequest();
+    this._xhr = xhr;
     xhr.addEventListener('loadstart', this._onLoadStart.bind(this));
     xhr.addEventListener('progress', this._onProgress.bind(this, callbacks, context));
     xhr.addEventListener('load', this._onLoad.bind(this, callbacks, context, xhr));
@@ -106,6 +119,11 @@ export class OfflineHlsLoader {
   }
 
   _onLoad(callbacks, context, xhr) {
+    // Clear stored XHR when load completes
+    if (this._xhr === xhr) {
+      this._xhr = null;
+    }
+
     if (xhr.status >= 400) {
       callbacks.onError({
         code: xhr.status,
@@ -120,6 +138,8 @@ export class OfflineHlsLoader {
   }
 
   _onError(callbacks, context) {
+    // Clear stored XHR on error
+    this._xhr = null;
     callbacks.onError({
       code: -1,
       text: 'Network request failed'
@@ -127,6 +147,8 @@ export class OfflineHlsLoader {
   }
 
   _onAbort(callbacks, context) {
+    // Clear stored XHR when request is aborted
+    this._xhr = null;
     callbacks.onAbort?.(context, null);
   }
 
@@ -138,10 +160,18 @@ export class OfflineHlsLoader {
   }
 
   _extractSegmentIndex(url) {
-    // Parse segment index from URL
-    // Typical HLS segment URLs look like: https://example.com/path/segment0.ts
-    const match = url.match(/segment(\d+)/i);
-    return match ? parseInt(match[1]) : null;
+    // Parse segment index from URL.
+    // Typical HLS segment URLs look like: .../segment0.ts, .../chunk-123.ts, or .../000123.ts
+    // We use the last number before the .ts file extension as the segment index.
+    const lastSegment = url.split('/').pop();
+    if (!lastSegment) return null;
+
+    const match = lastSegment.match(/(\d+)(?=\.ts$)/i);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+
+    return null;
   }
 }
 

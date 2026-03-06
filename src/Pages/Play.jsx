@@ -15,6 +15,7 @@ import useUpdateLikedMovies from "../CustomHooks/useUpdateLikedMovies";
 import useNetworkStatus from "../CustomHooks/useNetworkStatus";
 import DownloadProgress from "../componets/Download/DownloadProgress";
 import { checkIfDownloaded, initializeDownload, downloadSegments } from "../Services/downloadService";
+import { createOfflineHlsInstance } from "../Services/offlineHlsLoader";
 import { schedulePeriodicCleanup } from "../Services/storageCleanup";
 import toast from "react-hot-toast";
 
@@ -110,6 +111,8 @@ function Play() {
     return () => setIsPlaying(false);
   }, [setIsPlaying]);
 
+  const isOfflineRoute = location.state?.offline ?? false;
+
   useEffect(() => {
     window.scrollTo(0, 0);
     schedulePeriodicCleanup();
@@ -122,73 +125,17 @@ function Play() {
         console.log("Video API response:", response);
         const { video_url } = response.data || {};
         console.log("Fetched video URL:", video_url);
-        
+
         if (!video_url) {
           console.error("No video URL received from API");
-          setVideoError(true); 
-          return; 
+          setVideoError(true);
+          return;
         }
 
         // Backend should set CloudFront-Policy, CloudFront-Signature, CloudFront-Key-Pair-Id as cookies
-        // Use clean URL without query parameters
         setVideoUrl(video_url);
         setVideoError(false);
-        console.log("Successfully set video URL, initializing player...");
-
-        if (videoRef.current) {
-          if (Hls.isSupported()) {
-            console.log("HLS is supported, initializing Hls.js");
-            const hls = new Hls({
-              xhrSetup: function(xhr, url) {
-                // Enable credentials to send CloudFront signed cookies
-                xhr.withCredentials = true;
-                console.log("XHR setup with credentials for URL:", url);
-              }
-            });
-
-            hlsRef.current = hls;
-            hls.loadSource(video_url);
-            hls.attachMedia(videoRef.current);
-            
-            hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-              const levels = data.levels.map((l, i) => ({ index: i, height: l.height, label: `${l.height}p`, bitrate: l.bitrate }));
-              setQualityLevels(levels);
-              console.log("HLS Manifest Parsed - Available qualities:", levels);
-              // Auto-select quality based on network speed
-              autoSelectQuality();
-            });
-
-            // Add more detailed logging for video events
-            hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
-              console.log("Fragment loaded:", {
-                level: data.frag.level,
-                duration: data.frag.duration,
-                bitrate: data.frag.bitrate,
-                networkSpeed: networkSpeed
-              });
-            });
-
-            hls.on(Hls.Events.FRAG_CHANGED, (event, data) => {
-              console.log("Fragment changed:", {
-                level: data.frag.level,
-                duration: data.frag.duration,
-                currentTime: videoRef.current?.currentTime
-              });
-            });
-            //
-
-            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-              setCurrentQuality(data.level);
-              setCurrentBitrate(hls.levels[data.level]?.bitrate || 0);
-            });
-
-            hls.on(Hls.Events.ERROR, (event, data) => {
-              if (data.fatal) hls.startLoad(); // Retry on error
-            });
-          } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-            videoRef.current.src = video_url;
-          }
-        }
+        console.log("Successfully set video URL");
       })
       .catch(() => setVideoError(true));
 
@@ -204,12 +151,79 @@ function Play() {
     checkSavedProgress();
 
     return () => { 
-      if (hlsRef.current) hlsRef.current.destroy(); 
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!videoUrl || videoError || !videoRef.current) return;
+
+    const offlinePlayback = isOfflineRoute || isDownloaded;
+    let hlsInstance;
+
+    if (Hls.isSupported()) {
+      if (offlinePlayback) {
+        console.log("Initializing offline HLS player (using IndexedDB cache)");
+        hlsInstance = createOfflineHlsInstance(videoRef.current, id, true);
+      } else {
+        console.log("Initializing online HLS player (using CloudFront signed cookies)");
+        hlsInstance = new Hls({
+          xhrSetup: function(xhr, url) {
+            xhr.withCredentials = true;
+            console.log("XHR setup with credentials for URL:", url);
+          }
+        });
+        hlsInstance.attachMedia(videoRef.current);
+      }
+
+      hlsRef.current = hlsInstance;
+      hlsInstance.loadSource(videoUrl);
+
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        const levels = data.levels.map((l, i) => ({ index: i, height: l.height, label: `${l.height}p`, bitrate: l.bitrate }));
+        setQualityLevels(levels);
+        console.log("HLS Manifest Parsed - Available qualities:", levels);
+        // Auto-select quality based on network speed
+        autoSelectQuality();
+      });
+
+      hlsInstance.on(Hls.Events.FRAG_LOADED, (event, data) => {
+        console.log("Fragment loaded:", {
+          level: data.frag.level,
+          duration: data.frag.duration,
+          bitrate: data.frag.bitrate,
+          networkSpeed: networkSpeed
+        });
+      });
+
+      hlsInstance.on(Hls.Events.FRAG_CHANGED, (event, data) => {
+        console.log("Fragment changed:", {
+          level: data.frag.level,
+          duration: data.frag.duration,
+          currentTime: videoRef.current?.currentTime
+        });
+      });
+
+      hlsInstance.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+        setCurrentQuality(data.level);
+        setCurrentBitrate(hlsInstance.levels[data.level]?.bitrate || 0);
+      });
+
+      hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) hlsInstance.startLoad(); // Retry on error
+      });
+    } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+      videoRef.current.src = videoUrl;
+    }
+
+    return () => {
+      if (hlsInstance) {
+        hlsInstance.destroy();
+      }
+    };
+  }, [videoUrl, videoError, isDownloaded, isOfflineRoute]);
 
   // Auto-resume functionality
   const checkSavedProgress = async () => {

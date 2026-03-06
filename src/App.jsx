@@ -14,6 +14,7 @@ const Play = lazy(() => import("./Pages/Play"));
 const LikedMovies = lazy(() => import("./Pages/LikedMovies"));
 const History = lazy(() => import("./Pages/History"));
 const ForgotPassword = lazy(() => import("./Pages/ForgotPassword"));
+const Downloads = lazy(() => import("./Pages/Downloads"));
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./Context/UserContext";
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/mylist" element={<MyList />} />
                 <Route path="/liked" element={<LikedMovies />} />
                 <Route path="/history" element={<History />} />
+                <Route path="/downloads" element={<Downloads />} />
                 <Route path="/play/:id" element={<Play />} />
               </>
             ) : null}
