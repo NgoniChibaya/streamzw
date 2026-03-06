@@ -119,15 +119,15 @@ function Play() {
     checkIfDownloaded(id).then((downloaded) => {
       setIsDownloaded(downloaded);
       
-      // If downloaded, use dummy URL for offline playback
-      if (downloaded) {
+      // Only use offline mode if explicitly coming from offline route
+      if (isOfflineRoute && downloaded) {
         console.log("Video is downloaded, using offline mode");
-        setVideoUrl('offline://video.m3u8'); // Dummy URL for offline
+        setVideoUrl('offline://video.m3u8');
         setVideoError(false);
         return;
       }
       
-      // Otherwise fetch from server
+      // Otherwise fetch from server (even if downloaded)
       console.log("Attempting to fetch video for movie ID:", id);
       axios.get(`${DJANGO_API_URL}/movies/${id}/video/`, { withCredentials: true })
         .then((response) => {
@@ -149,18 +149,19 @@ function Play() {
     });
 
     // Fetch Metadata from downloaded movie or skip if offline
-    if (isDownloaded) {
-      const downloadedMovie = await getMovie(id);
-      if (downloadedMovie) {
-        setMovieDetails({
-          id: downloadedMovie.id,
-          title: downloadedMovie.title,
-          original_title: downloadedMovie.title,
-          overview: downloadedMovie.overview,
-          poster_path: downloadedMovie.poster_path,
-          backdrop_path: downloadedMovie.backdrop_path
-        });
-      }
+    if (isOfflineRoute) {
+      getDownloadedMovie(id).then(downloadedMovie => {
+        if (downloadedMovie) {
+          setMovieDetails({
+            id: downloadedMovie.id,
+            title: downloadedMovie.title,
+            original_title: downloadedMovie.title,
+            overview: downloadedMovie.overview,
+            poster_path: downloadedMovie.poster_path,
+            backdrop_path: downloadedMovie.backdrop_path
+          });
+        }
+      });
     } else {
       axios.get(`/movie/${id}?api_key=${API_KEY}&language=en-US`)
         .then((res) => {
@@ -171,7 +172,6 @@ function Play() {
         .catch(() => console.log('Failed to fetch movie metadata'));
     }
 
-    // Check for saved progress and auto-resume
     checkSavedProgress();
 
     return () => { 
@@ -184,7 +184,8 @@ function Play() {
   useEffect(() => {
     if (!videoUrl || videoError || !videoRef.current) return;
 
-    const offlinePlayback = isOfflineRoute || isDownloaded;
+    // Only use offline playback if explicitly from offline route
+    const offlinePlayback = isOfflineRoute;
     let hlsInstance;
 
     if (Hls.isSupported()) {
@@ -524,7 +525,7 @@ function Play() {
     const finalProgress = videoRef.current?.currentTime || currentTime || 0;
     console.log("Video playback ended. Duration:", finalDuration, "Progress:", finalProgress);
     
-    if (User && movieDetails && finalDuration > 0) {
+    if (User && movieDetails && movieDetails.id && finalDuration > 0) {
       addToWatchedMovies(movieDetails, finalProgress, finalDuration);
     }
   };
@@ -532,7 +533,7 @@ function Play() {
   // Add comprehensive video metrics logging
   useEffect(() => {
     const logVideoMetrics = () => {
-      if (videoRef.current && duration > 0) {
+      if (videoRef.current && duration > 0 && User && movieDetails && movieDetails.id) {
         const metrics = {
           currentTime: currentTime,
           duration: duration,
@@ -546,6 +547,11 @@ function Play() {
         };
         
         console.log("Video Metrics:", metrics);
+        
+        // Update Firebase with current progress
+        if (!videoRef.current.paused && videoRef.current.duration > 0) {
+          updateWatchProgress(movieDetails.id, videoRef.current.currentTime, videoRef.current.duration);
+        }
       }
     };
 
@@ -571,11 +577,11 @@ function Play() {
         videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
       }
     };
-  }, [currentTime, duration, networkSpeed, isOnline, currentQuality, currentBitrate, qualityLevels]);
+  }, [currentTime, duration, networkSpeed, isOnline, currentQuality, currentBitrate, qualityLevels, User, movieDetails, updateWatchProgress]);
 
   // Save progress periodically while watching
   useEffect(() => {
-    if (!User || !movieDetails) return;
+    if (!User || !movieDetails || !movieDetails.id) return;
 
     const saveProgressInterval = setInterval(() => {
       if (videoRef.current && !videoRef.current.paused && videoRef.current.duration > 0) {
@@ -589,7 +595,7 @@ function Play() {
   // Save progress when component unmounts or video ends
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (User && movieDetails && videoRef.current && videoRef.current.duration > 0) {
+      if (User && movieDetails && movieDetails.id && videoRef.current && videoRef.current.duration > 0) {
         updateWatchProgress(movieDetails.id, videoRef.current.currentTime, videoRef.current.duration);
       }
     };

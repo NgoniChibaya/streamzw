@@ -42,16 +42,10 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
         try {
           const levels = data.levels;
           
-          // Select quality level
-          let selectedLevel = 0;
-          if (quality !== 'auto') {
-            const selectedQuality = levels.findIndex(
-              (l) => l.height === parseInt(quality)
-            );
-            selectedLevel = selectedQuality !== -1 ? selectedQuality : 0;
-          } else {
-            // Auto: select middle quality to balance size and quality
-            selectedLevel = Math.floor(levels.length / 2);
+          // Select 480p quality for downloads
+          let selectedLevel = levels.findIndex(l => l.height === 480);
+          if (selectedLevel === -1) {
+            selectedLevel = 0; // Fallback to lowest quality
           }
 
           const level = levels[selectedLevel];
@@ -94,7 +88,7 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
             movieRecord,
             s3Url,
             selectedLevel,
-            levels
+            levelPlaylists: levels
           });
         } catch (error) {
           tempHls.destroy();
@@ -119,37 +113,42 @@ export const downloadSegments = async (movieId, manifestUrl, selectedLevel, leve
   try {
     const movieId_str = movieId.toString ? movieId.toString() : movieId;
 
-    // Determine which playlist to download for offline playback.
-    // If we were given levelPlaylists (from initialization), use the selected one.
-    // Otherwise, assume manifestUrl already points to the correct variant playlist.
-    const playlistUrl =
-      Array.isArray(levelPlaylists) && levelPlaylists.length > 0
-        ? (levelPlaylists[selectedLevel]?.url || levelPlaylists[0]?.url || manifestUrl)
-        : manifestUrl;
+    // Get the actual URL string from the level object
+    let playlistUrl = manifestUrl;
+    if (Array.isArray(levelPlaylists) && levelPlaylists.length > 0 && levelPlaylists[selectedLevel]) {
+      const level = levelPlaylists[selectedLevel];
+      playlistUrl = level.url ? level.url[0] : manifestUrl;
+    }
 
-    // Fetch the playlist (variant playlist) and save it for offline playback
+    console.log('Downloading from playlist URL:', playlistUrl);
+
     const playlistResponse = await axios.get(playlistUrl, {
       withCredentials: true
     });
     const manifestContent = playlistResponse.data;
 
-    // Save manifest for offline use (so offline loader can return it regardless of requested URL)
+    console.log('Manifest content length:', manifestContent.length);
+
     await saveManifest(movieId_str, manifestContent);
 
-    // Parse M3U8 manifest to get segment URLs
     const segmentUrls = parseM3U8Manifest(manifestContent, playlistUrl);
+    console.log('Total segments to download:', segmentUrls.length);
 
-    // Download each segment
+    if (segmentUrls.length === 0) {
+      throw new Error('No segments found in manifest');
+    }
+
     const totalSegments = segmentUrls.length;
     let downloadedSegments = 0;
+    let totalDownloadedBytes = 0;
 
     for (let i = 0; i < segmentUrls.length; i++) {
       const segmentUrl = segmentUrls[i];
       
-      // Check if already downloaded
       const existingSegment = await getSegment(movieId_str, i);
       if (existingSegment) {
         downloadedSegments++;
+        totalDownloadedBytes += existingSegment.byteLength;
         updateDownloadProgress(movieId_str, downloadedSegments, totalSegments);
         continue;
       }
@@ -163,17 +162,19 @@ export const downloadSegments = async (movieId, manifestUrl, selectedLevel, leve
 
         await saveSegment(movieId_str, i, segmentResponse.data);
         downloadedSegments++;
+        totalDownloadedBytes += segmentResponse.data.byteLength;
         updateDownloadProgress(movieId_str, downloadedSegments, totalSegments);
+        console.log(`Downloaded segment ${i + 1}/${totalSegments}`);
       } catch (error) {
         console.error(`Failed to download segment ${i}:`, error);
-        // Continue with next segment
       }
     }
 
-    // Update movie status
+    console.log('Download complete. Total bytes:', totalDownloadedBytes);
+
     const movie = await getMovie(movieId_str);
     movie.status = 'completed';
-    movie.downloadedSize = downloadedSegments * (SEGMENT_CHUNK_SIZE || 512000);
+    movie.downloadedSize = totalDownloadedBytes;
     await saveMovie(movie);
 
     downloadQueue.delete(movieId_str);

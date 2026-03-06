@@ -38,20 +38,42 @@ function Home() {
   }, [isOnline, navigate]);
 
   useEffect(() => {
+    if (!User) return;
+    
     getDoc(doc(db, "WatchedMovies", User.uid)).then((result) => {
       if (result.exists()) {
         const mv = result.data();
-        setWatchedMovies(mv.movies);
+        const moviesData = mv.movies;
         
-        // Filter for continue watching (not completed, has progress > 30s)
-        const continuing = mv.movies
-          .filter(m => m.progress > 30 && !m.completed)
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, 10);
-        setContinueWatching(continuing);
+        // Handle object map format
+        if (moviesData && typeof moviesData === 'object' && !Array.isArray(moviesData)) {
+          const moviesArray = Object.entries(moviesData).map(([id, data]) => ({
+            id,
+            ...data
+          }));
+          setWatchedMovies(moviesArray);
+          
+          const continuing = moviesArray
+            .filter(m => m.progress > 30 && !m.completed)
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 10);
+          setContinueWatching(continuing);
+        }
+        // Handle array format (old)
+        else if (Array.isArray(moviesData)) {
+          setWatchedMovies(moviesData);
+          
+          const continuing = moviesData
+            .filter(m => m.progress > 30 && !m.completed)
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 10);
+          setContinueWatching(continuing);
+        }
       }
+    }).catch(err => {
+      console.error('Error loading watched movies:', err);
     });
-  }, []);
+  }, [User]);
 
   return (
     <div>

@@ -204,11 +204,8 @@ const Downloads = () => {
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col justify-between p-3">
                     <div>
-                      <h3 className="text-white font-semibold text-sm line-clamp-2 mb-2">
-                        {movie.title}
-                      </h3>
-                      <p className="text-gray-300 text-xs mb-2">
-                        {movie.quality}
+                      <p className="text-gray-300 text-xs mb-1">
+                        {movie.quality} • {(movie.downloadedSize / (1024 * 1024)).toFixed(0)} MB
                       </p>
                       <p className="text-gray-400 text-xs">
                         Downloaded {new Date(movie.timestamp).toLocaleDateString()}
@@ -245,17 +242,20 @@ const Downloads = () => {
                     </div>
                   </div>
 
-                  {/* Downloaded Badge */}
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                      className="w-3 h-3"
-                    >
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
-                    Downloaded
+                  {/* Video Icon */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/50 rounded-full p-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" className="w-12 h-12">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Title at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
+                    <h3 className="text-white font-semibold text-sm line-clamp-2">
+                      {movie.title}
+                    </h3>
                   </div>
                 </div>
               </div>
