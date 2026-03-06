@@ -161,12 +161,16 @@ export class OfflineHlsLoader {
 
   _extractSegmentIndex(url) {
     // Parse segment index from URL.
-    // Typical HLS segment URLs look like: .../segment0.ts, .../chunk-123.ts, or .../000123.ts
-    // We use the last number before the .ts file extension as the segment index.
+    // Handles patterns like:
+    //  - .../segment0.ts
+    //  - .../chunk-123.ts
+    //  - .../000123.ts
+    //  - .../segment-123.ts?token=...
+    // We pick the last digits immediately before ".ts" (ignoring query params).
     const lastSegment = url.split('/').pop();
     if (!lastSegment) return null;
 
-    const match = lastSegment.match(/(\d+)(?=\.ts$)/i);
+    const match = lastSegment.match(/(\d+)(?=\.ts(?:\?|$))/i);
     if (match) {
       return parseInt(match[1], 10);
     }

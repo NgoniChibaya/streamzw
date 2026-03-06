@@ -70,6 +70,7 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
             timestamp: Date.now(),
             expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
             manifestUrl: s3Url,
+            playlistUrl: level.url,
             levelPlaylists: levels.map((l, idx) => ({
               index: idx,
               height: l.height,
@@ -114,21 +115,29 @@ export const initializeDownload = async (movieId, movieDetails, quality = 'auto'
   }
 };
 
-export const downloadSegments = async (movieId, manifestUrl, selectedLevel) => {
+export const downloadSegments = async (movieId, manifestUrl, selectedLevel, levelPlaylists = []) => {
   try {
     const movieId_str = movieId.toString ? movieId.toString() : movieId;
-    
-    // Fetch the playlist for selected level
-    const playlistResponse = await axios.get(manifestUrl, {
+
+    // Determine which playlist to download for offline playback.
+    // If we were given levelPlaylists (from initialization), use the selected one.
+    // Otherwise, assume manifestUrl already points to the correct variant playlist.
+    const playlistUrl =
+      Array.isArray(levelPlaylists) && levelPlaylists.length > 0
+        ? (levelPlaylists[selectedLevel]?.url || levelPlaylists[0]?.url || manifestUrl)
+        : manifestUrl;
+
+    // Fetch the playlist (variant playlist) and save it for offline playback
+    const playlistResponse = await axios.get(playlistUrl, {
       withCredentials: true
     });
     const manifestContent = playlistResponse.data;
 
-    // Parse M3U8 manifest to get segment URLs
-    const segmentUrls = parseM3U8Manifest(manifestContent, manifestUrl);
-    
-    // Save manifest for offline use
+    // Save manifest for offline use (so offline loader can return it regardless of requested URL)
     await saveManifest(movieId_str, manifestContent);
+
+    // Parse M3U8 manifest to get segment URLs
+    const segmentUrls = parseM3U8Manifest(manifestContent, playlistUrl);
 
     // Download each segment
     const totalSegments = segmentUrls.length;

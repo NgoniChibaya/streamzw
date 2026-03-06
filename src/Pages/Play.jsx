@@ -369,7 +369,12 @@ function Play() {
       const downloadInfo = await initializeDownload(id, movieDetails, 'auto');
       
       // Start downloading segments
-      await downloadSegments(downloadInfo.movieId, downloadInfo.s3Url, downloadInfo.selectedLevel);
+      await downloadSegments(
+        downloadInfo.movieId,
+        downloadInfo.s3Url,
+        downloadInfo.selectedLevel,
+        downloadInfo.levelPlaylists
+      );
       
       setIsDownloaded(true);
       toast.dismiss(); // Clear loading toast
