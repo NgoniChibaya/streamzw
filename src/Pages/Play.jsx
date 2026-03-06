@@ -191,10 +191,10 @@ function Play() {
       hlsInstance.loadSource(videoUrl);
 
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        console.log("HLS Manifest Parsed:", data);
         const levels = data.levels.map((l, i) => ({ index: i, height: l.height, label: `${l.height}p`, bitrate: l.bitrate }));
         setQualityLevels(levels);
         console.log("HLS Manifest Parsed - Available qualities:", levels);
-        // Auto-select quality based on network speed
         autoSelectQuality();
       });
 
@@ -221,7 +221,14 @@ function Play() {
       });
 
       hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) hlsInstance.startLoad(); // Retry on error
+        console.error("HLS Error:", data.type, data.details, data.fatal);
+        if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            hlsInstance.startLoad();
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hlsInstance.recoverMediaError();
+          }
+        }
       });
     } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
       videoRef.current.src = videoUrl;

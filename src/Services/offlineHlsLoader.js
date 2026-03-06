@@ -24,66 +24,64 @@ export class OfflineHlsLoader {
   }
 
   async load(context, config, callbacks) {
-    const { type, url } = context;
-
-    // Only handle playlist and segment loading
-    if (type !== 'playlist' && type !== 'segment') {
-      return;
-    }
-
     try {
-      if (type === 'playlist') {
-        // Load manifest from IndexedDB if offline
+      if (!context) {
+        console.error('OfflineHlsLoader: context is null');
+        callbacks.onError({ code: 500, text: 'Invalid context' }, {}, null);
+        return;
+      }
+
+      const { type, url } = context;
+      console.log(`OfflineHlsLoader: Loading ${type} from ${url}`);
+
+      // Handle both playlist and level types for manifest
+      if (type === 'manifest' || type === 'level') {
         if (this.isOfflineMode) {
+          console.log(`OfflineHlsLoader: Loading manifest from IndexedDB for movie ${this.movieId}`);
           const manifestContent = await getManifest(this.movieId);
           if (manifestContent) {
-            callbacks.onSuccess({
-              data: new TextEncoder().encode(manifestContent),
-              url: url
-            }, context, null);
+            console.log(`OfflineHlsLoader: Manifest loaded, length: ${manifestContent.length}`);
+            const response = { url: url, data: manifestContent };
+            const stats = { trequest: performance.now(), tfirst: performance.now(), tload: performance.now(), loaded: manifestContent.length, total: manifestContent.length, bw: 0, retry: 0 };
+            callbacks.onSuccess(response, stats, context);
+            return;
+          } else {
+            console.error(`OfflineHlsLoader: No manifest found in IndexedDB for movie ${this.movieId}`);
+            callbacks.onError({ code: 404, text: 'Manifest not found' }, context);
             return;
           }
         }
-        // Fall back to network
         this._loadFromNetwork(url, callbacks, context);
-      } else if (type === 'segment') {
-        // Extract segment index from URL
+        return;
+      }
+
+      // Handle segments
+      if (type === 'fragment') {
         const segmentIndex = this._extractSegmentIndex(url);
+        console.log(`OfflineHlsLoader: Loading segment ${segmentIndex}`);
         
         if (segmentIndex !== null) {
-          // Try to load from IndexedDB first
           const segmentData = await getSegment(this.movieId, segmentIndex);
           if (segmentData) {
-            callbacks.onSuccess({
-              data: segmentData,
-              url: url
-            }, context, null);
+            console.log(`OfflineHlsLoader: Segment ${segmentIndex} loaded from IndexedDB`);
+            const response = { url: url, data: segmentData };
+            const stats = { trequest: performance.now(), tfirst: performance.now(), tload: performance.now(), loaded: segmentData.byteLength, total: segmentData.byteLength, bw: 0, retry: 0 };
+            callbacks.onSuccess(response, stats, context);
             return;
           }
         }
 
-        // If offline, can't load segment
         if (this.isOfflineMode) {
-          callbacks.onError({
-            code: 404,
-            text: 'Segment not available offline'
-          }, context, null);
+          console.error(`OfflineHlsLoader: Segment ${segmentIndex} not found`);
+          callbacks.onError({ code: 404, text: 'Segment not available offline' }, context);
           return;
         }
 
-        // Fall back to network
         this._loadFromNetwork(url, callbacks, context);
       }
     } catch (error) {
-      console.error('OfflineHlsLoader error:', error);
-      if (this.isOfflineMode) {
-        callbacks.onError({
-          code: 500,
-          text: error.message
-        }, context, null);
-      } else {
-        this._loadFromNetwork(url, callbacks, context);
-      }
+      console.error('OfflineHlsLoader load error:', error);
+      callbacks.onError({ code: 500, text: error.message }, context || {}, null);
     }
   }
 
