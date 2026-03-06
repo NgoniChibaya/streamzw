@@ -241,13 +241,16 @@ function Play() {
         const watchedData = watchedDoc.data();
         console.log("Watched data:", watchedData);
 
-        // Support both old array format and new object map format
-        let movieProgress;
         const moviesData = watchedData.movies;
-        if (Array.isArray(moviesData)) {
-          movieProgress = moviesData.find(m => String(m.id) === String(id));
-        } else if (moviesData && typeof moviesData === 'object') {
+        let movieProgress;
+        
+        // Handle object map format (new)
+        if (moviesData && typeof moviesData === 'object' && !Array.isArray(moviesData)) {
           movieProgress = moviesData[String(id)];
+        }
+        // Handle array format (old) - convert to object map
+        else if (Array.isArray(moviesData)) {
+          movieProgress = moviesData.find(m => String(m.id) === String(id));
         }
 
         console.log("Movie progress found:", movieProgress);
@@ -270,13 +273,21 @@ function Play() {
   const resumeFromSavedProgress = () => {
     if (videoRef.current && savedProgress > 0) {
       console.log("Resuming video from saved progress:", savedProgress);
-      videoRef.current.currentTime = savedProgress;
       setShowContinuePrompt(false);
       
-      // Ensure video starts playing from the correct position
-      videoRef.current.play().catch(error => {
-        console.error("Error resuming video playback:", error);
-      });
+      const seekToSaved = () => {
+        videoRef.current.currentTime = savedProgress;
+        videoRef.current.play().catch(error => {
+          console.error("Error resuming video playback:", error);
+        });
+      };
+      
+      // Wait for video to be ready before seeking
+      if (videoRef.current.readyState >= 2) {
+        seekToSaved();
+      } else {
+        videoRef.current.addEventListener('loadedmetadata', seekToSaved, { once: true });
+      }
     }
   };
 
@@ -478,17 +489,12 @@ function Play() {
 
   const handleVideoEnded = () => {
     setIsPlayingLocal(false);
-    console.log("Video playback ended. Duration:", duration, "Current time:", currentTime);
-    // Mark as completed in watched movies
-    if (User && movieDetails) {
-      const finalDuration = duration || videoRef.current?.duration || 0;
-      const finalProgress = finalDuration > 0 ? finalDuration : (videoRef.current?.currentTime || 0);
-      if (finalDuration > 0) {
-        addToWatchedMovies(movieDetails, finalProgress, finalDuration);
-      } else {
-        // Avoid saving meaningless zero-duration entries
-        console.log('Skipping addToWatchedMovies: duration unknown or zero');
-      }
+    const finalDuration = videoRef.current?.duration || duration || 0;
+    const finalProgress = videoRef.current?.currentTime || currentTime || 0;
+    console.log("Video playback ended. Duration:", finalDuration, "Progress:", finalProgress);
+    
+    if (User && movieDetails && finalDuration > 0) {
+      addToWatchedMovies(movieDetails, finalProgress, finalDuration);
     }
   };
 
@@ -542,31 +548,24 @@ function Play() {
 
     const saveProgressInterval = setInterval(() => {
       if (videoRef.current && !videoRef.current.paused && videoRef.current.duration > 0) {
-        const actualDuration = duration > 0 ? duration : videoRef.current.duration;
-        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, actualDuration);
+        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, videoRef.current.duration);
       }
-    }, 5000); // Save every 5 seconds
+    }, 5000);
 
     return () => clearInterval(saveProgressInterval);
-  }, [User, movieDetails, duration, updateWatchProgress]);
+  }, [User, movieDetails, updateWatchProgress]);
 
   // Save progress when component unmounts or video ends
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (User && movieDetails && videoRef.current) {
-        const actualDuration = duration || videoRef.current.duration || 0;
-        const actualTime = videoRef.current.currentTime || 0;
-        if (actualDuration > 0) {
-          updateWatchProgress(movieDetails.id, actualTime, actualDuration);
-        } else {
-          console.log('Skipping updateWatchProgress on unload: duration unknown or zero');
-        }
+      if (User && movieDetails && videoRef.current && videoRef.current.duration > 0) {
+        updateWatchProgress(movieDetails.id, videoRef.current.currentTime, videoRef.current.duration);
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [User, movieDetails, duration, updateWatchProgress]);
+  }, [User, movieDetails, updateWatchProgress]);
 
   // Auto-adjust quality when network speed changes
   useEffect(() => {

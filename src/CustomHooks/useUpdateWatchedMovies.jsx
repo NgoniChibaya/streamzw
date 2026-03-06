@@ -24,17 +24,11 @@ function useUpdateWatchedMovies() {
   }
   const addToWatchedMovies = async (movie, progress = 0, duration = 0) => {
     try {
-      // Don't save if duration is 0 or invalid
-      if (!duration || duration <= 0) {
-        console.log('Skipping addToWatchedMovies: duration is invalid', { movieId: movie.id, progress, duration });
-        return;
-      }
-
       const docRef = doc(db, "WatchedMovies", User.uid);
       const entry = cleanObject({
-        completed: (progress / duration) > 0.9,
-        duration: duration,
-        progress: progress,
+        completed: duration > 0 ? (progress / duration) > 0.9 : false,
+        duration: duration || 0,
+        progress: progress || 0,
         timestamp: Date.now(),
       });
 
