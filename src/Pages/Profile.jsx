@@ -185,26 +185,25 @@ function Profile() {
                   placeholder={User ? User.displayName : null}
                 />
                 <h1 className="text-white text-lg font-medium mb-2">Email</h1>
-                <h1 className="text-white text-xl bg-stone-900 p-2 rounded mb-4 md:pr-52">
-                  {User ? User.email : null}
-                </h1>
-                <h1 className="text-white text-xl p-2 rounded mb-4">
-                  Unique ID : {User ? User.uid : null}
-                </h1>
-                <hr className="h-px bg-gray-500 border-0 mb-4 md:mb-10 dark:bg-gray-700"></hr>
+                <p className="text-white text-xl bg-stone-900 p-2 rounded mb-6 md:pr-52">
+                  {User ? User.email : "No email available"}
+                </p>
 
-                <h1 className="text-white text-lg font-medium mb-4">
-                  Who is Watching ?
-                </h1>
-                <div className="flex justify-between cursor-pointer mb-4 md:mb-8">
+                <h2 className="text-white text-lg font-medium mb-2">Profile picture</h2>
+                <p className="text-gray-300 mb-4">
+                  Pick one of the presets or upload your own image.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                   <img
                     onClick={() =>
                       updateProfilePic(
                         "https://i.pinimg.com/originals/ba/2e/44/ba2e4464e0d7b1882cc300feceac683c.png"
                       )
                     }
-                    className="w-16 h-16 rounded-md cursor-pointer"
+                    className="w-full h-24 object-cover rounded-md cursor-pointer border border-white/20 hover:border-white"
                     src="https://i.pinimg.com/originals/ba/2e/44/ba2e4464e0d7b1882cc300feceac683c.png"
+                    alt="Profile preset 1"
                   />
                   <img
                     onClick={() =>
@@ -212,8 +211,9 @@ function Profile() {
                         "https://i.pinimg.com/736x/db/70/dc/db70dc468af8c93749d1f587d74dcb08.jpg"
                       )
                     }
-                    className="w-16 h-16 rounded-md cursor-pointer"
+                    className="w-full h-24 object-cover rounded-md cursor-pointer border border-white/20 hover:border-white"
                     src="https://i.pinimg.com/736x/db/70/dc/db70dc468af8c93749d1f587d74dcb08.jpg"
+                    alt="Profile preset 2"
                   />
                   <img
                     onClick={() =>
@@ -221,8 +221,9 @@ function Profile() {
                         "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"
                       )
                     }
-                    className="w-16 h-16 rounded-md cursor-pointer"
+                    className="w-full h-24 object-cover rounded-md cursor-pointer border border-white/20 hover:border-white"
                     src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"
+                    alt="Profile preset 3"
                   />
                   <img
                     onClick={() =>
@@ -230,33 +231,33 @@ function Profile() {
                         "https://ih0.redbubble.net/image.618363037.0853/flat,1000x1000,075,f.u2.jpg"
                       )
                     }
-                    className="w-16 h-16 rounded-md cursor-pointer"
+                    className="w-full h-24 object-cover rounded-md cursor-pointer border border-white/20 hover:border-white"
                     src="https://ih0.redbubble.net/image.618363037.0853/flat,1000x1000,075,f.u2.jpg"
+                    alt="Profile preset 4"
                   />
+
+                  <button
+                    onClick={handleClick}
+                    className="flex items-center justify-center rounded-md border border-dashed border-white/40 bg-white/5 text-white py-4 hover:bg-white/10"
+                  >
+                    Upload a photo
+                  </button>
+
                   <input
                     style={{ display: "none" }}
                     ref={inputRef}
                     type="file"
+                    accept="image/*"
                     onChange={handleFileChange}
                   />
-                  <svg
-                    onClick={handleClick}
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 text-stone-600 cursor-pointer"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
                 </div>
+
                 {newProfielPicURL ? (
-                  <img className="h-30 w-72" src={newProfielPicURL} />
+                  <img
+                    className="h-30 w-full max-w-xs rounded-md shadow-lg"
+                    src={newProfielPicURL}
+                    alt="New preview"
+                  />
                 ) : null}
               </div>
             </div>

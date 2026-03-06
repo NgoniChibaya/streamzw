@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import styles from "./styles.module.scss";
 
 function Footer2() {
@@ -70,7 +71,11 @@ function Footer2() {
           <div className={styles.linkSection}>
             <h3 className={styles.linkSectionTitle}>Company</h3>
             <ul className={styles.linkList}>
-              <li><a href="#about" className={styles.link}>About Us</a></li>
+              <li>
+                <Link to="/about" className={styles.link}>
+                  About Us
+                </Link>
+              </li>
               <li><a href="#careers" className={styles.link}>Careers</a></li>
               <li><a href="#press" className={styles.link}>Press</a></li>
               <li><a href="#blog" className={styles.link}>Blog</a></li>

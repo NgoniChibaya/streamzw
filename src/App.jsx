@@ -14,8 +14,7 @@ const Play = lazy(() => import("./Pages/Play"));
 const LikedMovies = lazy(() => import("./Pages/LikedMovies"));
 const History = lazy(() => import("./Pages/History"));
 const ForgotPassword = lazy(() => import("./Pages/ForgotPassword"));
-const Downloads = lazy(() => import("./Pages/Downloads"));
-
+const Downloads = lazy(() => import("./Pages/Downloads"));const About = lazy(() => import("./Pages/About"));
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./Context/UserContext";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -49,6 +48,7 @@ function App() {
         ) : (
           <Routes>
             <Route index path="/" element={User ? <Home /> : <Welcome />} />
+            <Route path="/about" element={<About />} />
             {User ? (
               <>
                 <Route path="/home" element={<Home />} />

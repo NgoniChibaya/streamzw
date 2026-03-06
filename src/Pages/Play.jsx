@@ -240,9 +240,18 @@ function Play() {
       if (watchedDoc.exists()) {
         const watchedData = watchedDoc.data();
         console.log("Watched data:", watchedData);
-        const movieProgress = watchedData.movies?.find(m => String(m.id) === String(id));
+
+        // Support both old array format and new object map format
+        let movieProgress;
+        const moviesData = watchedData.movies;
+        if (Array.isArray(moviesData)) {
+          movieProgress = moviesData.find(m => String(m.id) === String(id));
+        } else if (moviesData && typeof moviesData === 'object') {
+          movieProgress = moviesData[String(id)];
+        }
+
         console.log("Movie progress found:", movieProgress);
-        
+
         if (movieProgress && movieProgress.progress > 30 && !movieProgress.completed) {
           console.log("Setting saved progress to:", movieProgress.progress);
           setSavedProgress(movieProgress.progress);

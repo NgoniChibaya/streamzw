@@ -31,30 +31,24 @@ function useUpdateWatchedMovies() {
       }
 
       const docRef = doc(db, "WatchedMovies", User.uid);
-      const docSnap = await getDoc(docRef);
-
-      let movies = docSnap.exists() ? (docSnap.data().movies || []) : [];
-      
-      // Remove existing entry if found
-      movies = movies.filter(m => m.id !== movie.id);
-      
-      // Add to beginning with metadata
-      movies.unshift({
-        ...movie,
-        progress: progress,
+      const entry = cleanObject({
+        completed: (progress / duration) > 0.9,
         duration: duration,
+        progress: progress,
         timestamp: Date.now(),
-        completed: (progress / duration) > 0.9
       });
-      
-      // Keep only last 50 and remove undefined fields
-      movies = movies.slice(0, 50).map(cleanObject);
 
-      if (docSnap.exists()) {
-        await updateDoc(docRef, { movies });
-      } else {
-        await setDoc(docRef, { movies });
-      }
+      // Store as map keyed by movie id
+      await updateDoc(docRef, {
+        [`movies.${movie.id}`]: entry,
+      }).catch(async (err) => {
+        // If doc doesn't exist, create it
+        if (err.code === 'not-found' || err.message?.includes('No document to update')) {
+          await setDoc(docRef, { movies: { [movie.id]: entry } });
+        } else {
+          throw err;
+        }
+      });
     } catch (error) {
       console.error("Error adding to watched:", error);
     }
@@ -71,44 +65,21 @@ function useUpdateWatchedMovies() {
       const docRef = doc(db, "WatchedMovies", User.uid);
       const docSnap = await getDoc(docRef);
       
+      const entry = cleanObject({
+        completed: (progress / duration) > 0.9,
+        duration: duration,
+        progress: progress,
+        timestamp: Date.now(),
+      });
+
+      // If the document exists, update the specific movie entry in the map
       if (docSnap.exists()) {
-        let movies = docSnap.data().movies || [];
-        const index = movies.findIndex(m => m.id === movieId);
-
-        if (index !== -1) {
-          movies[index] = cleanObject({
-            ...movies[index],
-            progress: progress,
-            duration: duration,
-            timestamp: Date.now(),
-            completed: (progress / duration) > 0.9
-          });
-
-          movies = movies.map(cleanObject);
-          await updateDoc(docRef, { movies });
-        } else {
-          // If the movie entry doesn't exist yet, append a minimal entry
-          const newEntry = cleanObject({
-            id: movieId,
-            progress: progress,
-            duration: duration,
-            timestamp: Date.now(),
-            completed: (progress / duration) > 0.9
-          });
-          movies.unshift(newEntry);
-          movies = movies.map(cleanObject);
-          await updateDoc(docRef, { movies });
-        }
-      } else {
-        // Create the document with the single movie entry
-        const newEntry = cleanObject({
-          id: movieId,
-          progress: progress,
-          duration: duration,
-          timestamp: Date.now(),
-          completed: (progress / duration) > 0.9
+        await updateDoc(docRef, {
+          [`movies.${movieId}`]: entry,
         });
-        await setDoc(docRef, { movies: [newEntry] });
+      } else {
+        // Create the document with the movies map
+        await setDoc(docRef, { movies: { [movieId]: entry } });
       }
     } catch (error) {
       console.error("Error updating progress:", error);
