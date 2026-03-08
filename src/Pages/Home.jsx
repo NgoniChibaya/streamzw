@@ -88,24 +88,17 @@ function Home() {
             key="Continue Watching"
           />
         )}
+        <RowPost
+          title="Trending Series"
+          url={trendingSeries}
+          key={trendingSeries}
+        ></RowPost>
         <RowPost title="Animated" url={Animated} key={Animated}></RowPost>
-        {watchedMovies.length != 0 ? (
-          <RowPost
-            title="Watched Movies"
-            movieData={watchedMovies}
-            key={"Watched Movies"}
-          ></RowPost>
-        ) : null}
         <RowPost
           title="Netflix Originals"
           islarge
           url={originals}
           key={originals}
-        ></RowPost>
-        <RowPost
-          title="Trending Series"
-          url={trendingSeries}
-          key={trendingSeries}
         ></RowPost>
         <RowPost title="Science Fiction" url={SciFi} key={SciFi}></RowPost>
         <RowPost title="Upcoming Movies" url={UpcomingMovies} key={UpcomingMovies}></RowPost>

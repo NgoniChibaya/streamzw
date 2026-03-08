@@ -86,8 +86,8 @@ function Navbar(props) {
                     </Link>
 
                     <Link
-                      to={"/series"}
-                      className="py-2 font-medium text-white transition ease-in-out delay-150 rounded-md cursor-pointer hover:text-[#5b7ea4] lg:px-3 text-m"
+                      to={"#"}
+                      className="py-2 font-medium text-white transition ease-in-out delay-150 rounded-md cursor-pointer hover:text-[#5b7ea4] lg:px-3 text-m hidden"
                     >
                       Series
                     </Link>
@@ -261,7 +261,7 @@ function Navbar(props) {
                     </a>
                   </Link>
 
-                  <Link to={"/series"}>
+                  <Link to={"#"} className="hidden">
                     <a className="block px-3 py-2 text-base font-medium text-white rounded-md hover:bg-[#5b7ea4] hover:text-white">
                       TV-Series
                     </a>

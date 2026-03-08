@@ -32,6 +32,7 @@ function RowPost(props) {
   const { convertGenere } = useGenereConverter();
 
   const [movies, setMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [moviePopupInfo, setMoviePopupInfo] = useState({});
@@ -60,10 +61,14 @@ function RowPost(props) {
     setUserEmail(email);
     if (props.movieData != null) {
       setMovies(props.movieData);
+      setIsLoading(false);
     } else {
       instance.get(props.url).then((response) => {
         console.log(response.data.results);
         setMovies(response.data.results);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       });
     }
   }, []);
@@ -530,14 +535,14 @@ function RowPost(props) {
             })}
           </Swiper>
         </>
-      ) : (
+      ) : isLoading ? (
         <>
           <div className="animate-pulse">
             <div className="w-72 ml-1 mt-2 sm:ml-0 sm:w-96 py-5 mb-5 xl:py-4 2xl:py-6 xl:w-45rem bg-neutral-900 rounded-md"></div>
             <div className="w-91% md:w-98% ml-1 mb-14 sm:ml-0 py-16 md:py-24  bg-neutral-900 rounded-md"></div>
           </div>
         </>
-      )}
+      ) : null}
 
 <>
         {/* Movie Pop Up section */}

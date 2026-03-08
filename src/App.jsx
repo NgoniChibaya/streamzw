@@ -47,11 +47,11 @@ function App() {
           </div>
         ) : (
           <Routes>
-            <Route index path="/" element={User ? <Home /> : <Welcome />} />
+            <Route index path="/" element={User ? <Series /> : <Welcome />} />
             <Route path="/about" element={<About />} />
             {User ? (
               <>
-                <Route path="/home" element={<Home />} />
+                <Route path="/home" element={<Series />} />
                 <Route path="/series" element={<Series />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/profile" element={<Profile />} />
